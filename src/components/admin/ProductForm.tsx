@@ -1,0 +1,193 @@
+import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { ImagePlus, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { generateProductCopy } from "@/lib/ai.functions";
+import { uploadProductImage, useSaveProduct, type AdminProduct } from "@/lib/admin-data";
+
+export function ProductForm({ product }: { product?: AdminProduct }) {
+  const navigate = useNavigate();
+  const save = useSaveProduct();
+  const generate = useServerFn(generateProductCopy);
+
+  const [title, setTitle] = useState(product?.title ?? "");
+  const [description, setDescription] = useState(product?.description ?? "");
+  const [imageUrl, setImageUrl] = useState(product?.image_url ?? null);
+  const [isActive, setIsActive] = useState(product?.is_active ?? true);
+  const [sortOrder, setSortOrder] = useState(product?.sort_order ?? 999);
+  const [brief, setBrief] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  async function handleUpload(file: File) {
+    setUploading(true);
+    try {
+      const url = await uploadProductImage(file);
+      setImageUrl(url);
+      toast.success("Foto enviada");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao enviar a foto");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleGenerate() {
+    const prompt = brief.trim() || title.trim();
+    if (prompt.length < 3) {
+      toast.error("Descreva o produto em poucas palavras para a IA ajudar.");
+      return;
+    }
+    setGenerating(true);
+    try {
+      const copy = await generate({ data: { brief: prompt } });
+      setTitle(copy.title || title);
+      setDescription(copy.commercialDescription || copy.shortDescription || description);
+      toast.success("Sugestão aplicada");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível gerar o texto");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (title.trim().length < 2) {
+      toast.error("Informe o nome do produto");
+      return;
+    }
+    try {
+      await save.mutateAsync({
+        id: product?.id,
+        title: title.trim(),
+        description: description.trim(),
+        image_url: imageUrl,
+        is_active: isActive,
+        sort_order: Number.isFinite(sortOrder) ? sortOrder : 999,
+      });
+      toast.success(product ? "Produto atualizado" : "Produto criado");
+      void navigate({ to: "/admin/produtos" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao salvar o produto");
+    }
+  }
+
+  return (
+    <form className="flex max-w-xl flex-col gap-5" onSubmit={handleSubmit}>
+      <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+        <Label htmlFor="brief" className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+          Auxílio de IA
+        </Label>
+        <Textarea
+          id="brief"
+          rows={2}
+          placeholder="Ex: bolo de cenoura caseiro com cobertura de chocolate, tamanho família"
+          value={brief}
+          onChange={(event) => setBrief(event.target.value)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 rounded-full"
+          onClick={() => void handleGenerate()}
+          disabled={generating}
+        >
+          {generating ? "Gerando..." : "Gerar título e descrição"}
+        </Button>
+      </section>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="title">Nome do produto</Label>
+        <Input
+          id="title"
+          className="h-12"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="description">Descrição</Label>
+        <Textarea
+          id="description"
+          rows={4}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+        />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <Label htmlFor="photo">Foto</Label>
+        <div className="flex items-center gap-3">
+          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted">
+            {imageUrl ? (
+              <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full w-full place-items-center text-muted-foreground">
+                <ImagePlus className="h-5 w-5" aria-hidden />
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <Input
+              id="photo"
+              type="file"
+              accept="image/*"
+              disabled={uploading}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void handleUpload(file);
+              }}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {uploading ? "Enviando foto..." : "JPG ou PNG, proporção quadrada fica melhor."}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">Produto ativo</p>
+          <p className="text-xs text-muted-foreground">Inativo não aparece no catálogo público.</p>
+        </div>
+        <Switch checked={isActive} onCheckedChange={setIsActive} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="sort">Posição na vitrine</Label>
+        <Input
+          id="sort"
+          type="number"
+          min={1}
+          className="h-12"
+          value={sortOrder}
+          onChange={(event) => setSortOrder(Number(event.target.value))}
+        />
+      </div>
+
+      <div className="flex gap-3">
+        <Button type="submit" className="h-12 flex-1 rounded-full" disabled={save.isPending}>
+          {save.isPending ? "Salvando..." : "Salvar produto"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 rounded-full"
+          onClick={() => void navigate({ to: "/admin/produtos" })}
+        >
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}

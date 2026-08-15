@@ -49,7 +49,9 @@ function ProductsPage() {
     const target = index + direction;
     if (target < 0 || target >= data.length) return;
     const next = [...data];
-    const [item] = next.splice(index, 1);
+    const item = next[index];
+    if (!item) return;
+    next.splice(index, 1);
     next.splice(target, 0, item);
     try {
       await reorder.mutateAsync(next.map((product, i) => ({ id: product.id, sort_order: i + 1 })));

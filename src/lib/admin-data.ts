@@ -9,6 +9,15 @@ export type AdminProduct = {
   image_url: string | null;
   is_active: boolean;
   sort_order: number;
+  category_id: string | null;
+  categories?: { id: string; name: string } | null;
+};
+
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  sort_order: number;
 };
 
 const IMAGE_URL_TTL = 60 * 60 * 24 * 365 * 10; // 10 anos
@@ -42,7 +51,7 @@ export function useAdminProducts() {
     queryFn: async (): Promise<AdminProduct[]> => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, title, description, image_url, is_active, sort_order")
+        .select("id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -57,12 +66,126 @@ export function useAdminProduct(id: string) {
     queryFn: async (): Promise<AdminProduct> => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, title, description, image_url, is_active, sort_order")
+        .select("id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)")
         .eq("id", id)
         .single();
       if (error) throw error;
       return data;
     },
+  });
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ["admin-categories"],
+    queryFn: async (): Promise<Category[]> => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, slug, sort_order")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/** Quantidade de produtos vinculados a cada categoria. */
+export function useCategoryProductCounts() {
+  return useQuery({
+    queryKey: ["admin-category-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("category_id");
+      if (error) throw error;
+      const counts = new Map<string, number>();
+      for (const row of data ?? []) {
+        if (!row.category_id) continue;
+        counts.set(row.category_id, (counts.get(row.category_id) ?? 0) + 1);
+      }
+      return counts;
+    },
+  });
+}
+
+export function slugifyCategory(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 60);
+}
+
+function useInvalidateCategories() {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-category-counts"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    void queryClient.invalidateQueries({ queryKey: ["catalog"] });
+  };
+}
+
+export function useSaveCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: async (input: { id?: string | undefined; name: string; sort_order: number }) => {
+      const payload = {
+        name: input.name,
+        slug: slugifyCategory(input.name) || crypto.randomUUID().slice(0, 8),
+        sort_order: input.sort_order,
+      };
+      if (input.id) {
+        const { error } = await supabase.from("categories").update(payload).eq("id", input.id);
+        if (error) throw error;
+        return input.id;
+      }
+      const { data, error } = await supabase
+        .from("categories")
+        .insert(payload)
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { count, error: countError } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("category_id", id);
+      if (countError) throw countError;
+      if ((count ?? 0) > 0) {
+        throw new Error(
+          "Esta categoria possui produtos vinculados. Mova os produtos para outra categoria antes de excluir.",
+        );
+      }
+      const { error } = await supabase.from("categories").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Move todos os produtos de uma categoria para outra. */
+export function useMoveCategoryProducts() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: async ({ fromId, toId }: { fromId: string; toId: string }) => {
+      const { error } = await supabase
+        .from("products")
+        .update({ category_id: toId })
+        .eq("category_id", fromId);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
   });
 }
 
@@ -86,6 +209,7 @@ export function useSaveProduct() {
       image_url: string | null;
       is_active: boolean;
       sort_order: number;
+      category_id: string;
     }) => {
       if (input.id) {
         const { error } = await supabase
@@ -96,6 +220,7 @@ export function useSaveProduct() {
             image_url: input.image_url,
             is_active: input.is_active,
             sort_order: input.sort_order,
+            category_id: input.category_id,
           })
           .eq("id", input.id);
         if (error) throw error;
@@ -110,6 +235,7 @@ export function useSaveProduct() {
           image_url: input.image_url,
           is_active: input.is_active,
           sort_order: input.sort_order,
+          category_id: input.category_id,
         })
         .select("id")
         .single();

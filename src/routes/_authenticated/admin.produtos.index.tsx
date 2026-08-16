@@ -105,6 +105,9 @@ function ProductsPage() {
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{product.title}</p>
+              <p className="mt-0.5 truncate text-xs font-medium text-primary">
+                {product.categories?.name ?? "Sem categoria"}
+              </p>
               <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                 {product.description}
               </p>

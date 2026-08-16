@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BarChart3, LogOut, Package, Settings } from "lucide-react";
+import { BarChart3, LogOut, Package, Settings, Tags } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useIsAdmin } from "@/lib/admin-data";
 const links = [
   { to: "/admin", label: "Dashboard", icon: BarChart3 },
   { to: "/admin/produtos", label: "Produtos", icon: Package },
+  { to: "/admin/categorias", label: "Categorias", icon: Tags },
   { to: "/admin/config", label: "Configurações", icon: Settings },
 ] as const;
 

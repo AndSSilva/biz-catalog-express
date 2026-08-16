@@ -7,21 +7,35 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { generateProductCopy } from "@/lib/ai.functions";
-import { uploadProductImage, useSaveProduct, type AdminProduct } from "@/lib/admin-data";
+import {
+  uploadProductImage,
+  useCategories,
+  useSaveProduct,
+  type AdminProduct,
+} from "@/lib/admin-data";
 
 export function ProductForm({ product }: { product?: AdminProduct }) {
   const navigate = useNavigate();
   const save = useSaveProduct();
   const generate = useServerFn(generateProductCopy);
+  const categories = useCategories();
 
   const [title, setTitle] = useState(product?.title ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
   const [imageUrl, setImageUrl] = useState(product?.image_url ?? null);
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
   const [sortOrder, setSortOrder] = useState(product?.sort_order ?? 999);
+  const [categoryId, setCategoryId] = useState(product?.category_id ?? "");
   const [brief, setBrief] = useState("");
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -64,6 +78,10 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
       toast.error("Informe o nome do produto");
       return;
     }
+    if (!categoryId) {
+      toast.error("Selecione uma categoria");
+      return;
+    }
     try {
       await save.mutateAsync({
         id: product?.id,
@@ -71,6 +89,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         description: description.trim(),
         image_url: imageUrl,
         is_active: isActive,
+        category_id: categoryId,
         sort_order: Number.isFinite(sortOrder) ? sortOrder : 999,
       });
       toast.success(product ? "Produto atualizado" : "Produto criado");
@@ -123,6 +142,27 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           value={description}
           onChange={(event) => setDescription(event.target.value)}
         />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="category">Categoria</Label>
+        <Select value={categoryId} onValueChange={setCategoryId}>
+          <SelectTrigger id="category" className="h-12">
+            <SelectValue placeholder="Selecione uma categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            {(categories.data ?? []).map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {categories.data && categories.data.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Nenhuma categoria cadastrada. Crie uma em Admin &gt; Categorias.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">

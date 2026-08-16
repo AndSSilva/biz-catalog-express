@@ -16,6 +16,8 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminConfigRouteImport } from './routes/_authenticated/admin.config'
 import { Route as AuthenticatedAdminProdutosIndexRouteImport } from './routes/_authenticated/admin.produtos.index'
+import { Route as AuthenticatedAdminProdutosIdRouteImport } from './routes/_authenticated/admin.produtos.$id'
+import { Route as AuthenticatedAdminProdutosNovoRouteImport } from './routes/_authenticated/admin.produtos.novo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -53,6 +55,18 @@ const AuthenticatedAdminProdutosIndexRoute =
     path: '/admin/produtos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminProdutosIdRoute =
+  AuthenticatedAdminProdutosIdRouteImport.update({
+    id: '/admin/produtos/$id',
+    path: '/admin/produtos/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminProdutosNovoRoute =
+  AuthenticatedAdminProdutosNovoRouteImport.update({
+    id: '/admin/produtos/novo',
+    path: '/admin/produtos/novo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +74,8 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/config': typeof AuthenticatedAdminConfigRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
+  '/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/admin/produtos/': typeof AuthenticatedAdminProdutosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -68,6 +84,8 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/config': typeof AuthenticatedAdminConfigRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
+  '/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosIndexRoute
 }
 export interface FileRoutesById {
@@ -78,6 +96,8 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/_authenticated/admin/config': typeof AuthenticatedAdminConfigRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
+  '/_authenticated/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/_authenticated/admin/produtos/': typeof AuthenticatedAdminProdutosIndexRoute
 }
 export interface FileRouteTypes {
@@ -88,6 +108,8 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/config'
     | '/admin/'
+    | '/admin/produtos/$id'
+    | '/admin/produtos/novo'
     | '/admin/produtos/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -96,6 +118,8 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/config'
     | '/admin'
+    | '/admin/produtos/$id'
+    | '/admin/produtos/novo'
     | '/admin/produtos'
   id:
     | '__root__'
@@ -105,6 +129,8 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/_authenticated/admin/config'
     | '/_authenticated/admin/'
+    | '/_authenticated/admin/produtos/$id'
+    | '/_authenticated/admin/produtos/novo'
     | '/_authenticated/admin/produtos/'
   fileRoutesById: FileRoutesById
 }
@@ -166,18 +192,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProdutosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/produtos/$id': {
+      id: '/_authenticated/admin/produtos/$id'
+      path: '/admin/produtos/$id'
+      fullPath: '/admin/produtos/$id'
+      preLoaderRoute: typeof AuthenticatedAdminProdutosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/produtos/novo': {
+      id: '/_authenticated/admin/produtos/novo'
+      path: '/admin/produtos/novo'
+      fullPath: '/admin/produtos/novo'
+      preLoaderRoute: typeof AuthenticatedAdminProdutosNovoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminConfigRoute: typeof AuthenticatedAdminConfigRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminProdutosIdRoute: typeof AuthenticatedAdminProdutosIdRoute
+  AuthenticatedAdminProdutosNovoRoute: typeof AuthenticatedAdminProdutosNovoRoute
   AuthenticatedAdminProdutosIndexRoute: typeof AuthenticatedAdminProdutosIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminConfigRoute: AuthenticatedAdminConfigRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminProdutosIdRoute: AuthenticatedAdminProdutosIdRoute,
+  AuthenticatedAdminProdutosNovoRoute: AuthenticatedAdminProdutosNovoRoute,
   AuthenticatedAdminProdutosIndexRoute: AuthenticatedAdminProdutosIndexRoute,
 }
 

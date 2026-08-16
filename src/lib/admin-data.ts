@@ -80,7 +80,7 @@ export function useSaveProduct() {
 
   return useMutation({
     mutationFn: async (input: {
-      id?: string;
+      id?: string | undefined;
       title: string;
       description: string;
       image_url: string | null;

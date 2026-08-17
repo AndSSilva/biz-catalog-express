@@ -8,6 +8,12 @@ export type CatalogProduct = {
   title: string;
   description: string;
   image_url: string | null;
+  category_id: string | null;
+};
+
+export type CatalogCategory = {
+  id: string;
+  name: string;
 };
 
 export type StoreSettings = {
@@ -27,14 +33,15 @@ const DEFAULT_SETTINGS: StoreSettings = {
 export const getCatalog = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = createPublicClient();
 
-  const [productsResult, settingsResult] = await Promise.all([
+  const [productsResult, settingsResult, categoriesResult] = await Promise.all([
     supabase
       .from("products")
-      .select("id, title, description, image_url")
+      .select("id, title, description, image_url, category_id")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
     supabase.from("settings").select("key, value"),
+    supabase.from("categories").select("id, name").order("sort_order", { ascending: true }).order("name", { ascending: true }),
   ]);
 
   if (productsResult.error) {
@@ -50,7 +57,11 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
     storeTagline: map.get("store_tagline") || DEFAULT_SETTINGS.storeTagline,
   };
 
-  return { products: (productsResult.data ?? []) as CatalogProduct[], settings };
+  return {
+    products: (productsResult.data ?? []) as CatalogProduct[],
+    categories: (categoriesResult.data ?? []) as CatalogCategory[],
+    settings,
+  };
 });
 
 const orderSchema = z.object({

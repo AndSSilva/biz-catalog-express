@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ShoppingCart } from "lucide-react";
@@ -54,6 +55,16 @@ function CatalogPage() {
   const { data } = useSuspenseQuery(catalogQueryOptions);
   const cart = useCart();
   const count = totalItems(cart);
+  const [categoryId, setCategoryId] = useState<string>("all");
+
+  const categories = data.categories ?? [];
+  const visibleProducts = useMemo(
+    () =>
+      categoryId === "all"
+        ? data.products
+        : data.products.filter((product) => product.category_id === categoryId),
+    [data.products, categoryId],
+  );
 
   const quantityOf = (id: string) => cart.find((item) => item.id === id)?.quantity ?? 0;
 
@@ -85,16 +96,49 @@ function CatalogPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-5 py-6">
-        {data.products.length === 0 ? (
+        {categories.length > 0 && (
+          <div className="mb-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Categoria
+            </p>
+            <div
+              role="group"
+              aria-label="Filtrar por categoria"
+              className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+            >
+              {[{ id: "all", name: "Todas" }, ...categories].map((category) => {
+                const active = categoryId === category.id;
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setCategoryId(category.id)}
+                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {category.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {visibleProducts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
             <h2 className="text-lg font-semibold">Nenhum produto disponível</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Volte em breve: o catálogo está sendo atualizado.
+              {categoryId === "all"
+                ? "Volte em breve: o catálogo está sendo atualizado."
+                : "Nenhum produto nesta categoria. Escolha \u201cTodas\u201d para ver tudo."}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {data.products.map((product) => (
+            {visibleProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}

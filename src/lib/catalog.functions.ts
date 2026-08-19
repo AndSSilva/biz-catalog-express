@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { notFound } from "@tanstack/react-router";
 import { z } from "zod";
 
 import { createPublicClient } from "./supabase-public.server";
@@ -23,6 +24,15 @@ export type StoreSettings = {
   storeTagline: string;
 };
 
+export type CatalogCompany = {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+};
+
 const DEFAULT_SETTINGS: StoreSettings = {
   whatsappNumber: "",
   greeting: "Olá! Gostaria de fazer um pedido:",
@@ -30,41 +40,95 @@ const DEFAULT_SETTINGS: StoreSettings = {
   storeTagline: "Escolha os produtos e finalize pelo WhatsApp",
 };
 
-export const getCatalog = createServerFn({ method: "GET" }).handler(async () => {
-  const supabase = createPublicClient();
+const slugSchema = z.object({ slug: z.string().min(1).max(80) });
 
-  const [productsResult, settingsResult, categoriesResult] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, title, description, image_url, category_id")
+export const getCatalog = createServerFn({ method: "GET" })
+  .inputValidator((input) => slugSchema.parse(input))
+  .handler(async ({ data }) => {
+    const supabase = createPublicClient();
+
+    // A empresa é resolvida no servidor a partir do endereço público (slug).
+    const { data: company, error: companyError } = await supabase
+      .from("companies")
+      .select("id, name, slug, logo_url, primary_color, secondary_color")
+      .eq("slug", data.slug)
       .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true }),
-    supabase.from("settings").select("key, value"),
-    supabase.from("categories").select("id, name").order("sort_order", { ascending: true }).order("name", { ascending: true }),
-  ]);
+      .maybeSingle();
 
-  if (productsResult.error) {
-    console.error("getCatalog products", productsResult.error);
-    throw new Error("Não foi possível carregar o catálogo.");
+    if (companyError) {
+      console.error("getCatalog company", companyError);
+      throw new Error("Não foi possível carregar o catálogo.");
+    }
+    if (!company) throw notFound();
+
+    const [productsResult, settingsResult, categoriesResult] = await Promise.all([
+      supabase
+        .from("products")
+        .select("id, title, description, image_url, category_id")
+        .eq("company_id", company.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase.from("settings").select("key, value").eq("company_id", company.id),
+      supabase
+        .from("categories")
+        .select("id, name")
+        .eq("company_id", company.id)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true }),
+    ]);
+
+    if (productsResult.error) {
+      console.error("getCatalog products", productsResult.error);
+      throw new Error("Não foi possível carregar o catálogo.");
+    }
+
+    const map = new Map((settingsResult.data ?? []).map((row) => [row.key, row.value]));
+    const settings: StoreSettings = {
+      whatsappNumber: map.get("whatsapp_number") ?? DEFAULT_SETTINGS.whatsappNumber,
+      greeting: map.get("greeting") || DEFAULT_SETTINGS.greeting,
+      storeName: map.get("store_name") || company.name,
+      storeTagline: map.get("store_tagline") || DEFAULT_SETTINGS.storeTagline,
+    };
+
+    return {
+      company: {
+        id: company.id,
+        name: company.name,
+        slug: company.slug,
+        logoUrl: company.logo_url,
+        primaryColor: company.primary_color,
+        secondaryColor: company.secondary_color,
+      } satisfies CatalogCompany,
+      products: (productsResult.data ?? []) as CatalogProduct[],
+      categories: (categoriesResult.data ?? []) as CatalogCategory[],
+      settings,
+    };
+  });
+
+/** Usado na raiz do site: se existe apenas uma empresa ativa, ela é o catálogo padrão. */
+export const getDefaultCatalog = createServerFn({ method: "GET" }).handler(async () => {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("companies")
+    .select("slug, name")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(2);
+
+  if (error) {
+    console.error("getDefaultCatalog", error);
+    return { slug: null as string | null, count: 0 };
   }
 
-  const map = new Map((settingsResult.data ?? []).map((row) => [row.key, row.value]));
-  const settings: StoreSettings = {
-    whatsappNumber: map.get("whatsapp_number") ?? DEFAULT_SETTINGS.whatsappNumber,
-    greeting: map.get("greeting") || DEFAULT_SETTINGS.greeting,
-    storeName: map.get("store_name") || DEFAULT_SETTINGS.storeName,
-    storeTagline: map.get("store_tagline") || DEFAULT_SETTINGS.storeTagline,
-  };
-
   return {
-    products: (productsResult.data ?? []) as CatalogProduct[],
-    categories: (categoriesResult.data ?? []) as CatalogCategory[],
-    settings,
+    slug: (data ?? []).length === 1 ? (data![0]!.slug as string) : null,
+    count: (data ?? []).length,
   };
 });
 
 const orderSchema = z.object({
+  slug: z.string().min(1).max(80),
   items: z
     .array(
       z.object({
@@ -82,11 +146,35 @@ export const recordOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => orderSchema.parse(input))
   .handler(async ({ data }) => {
     const supabase = createPublicClient();
-    const total = data.items.reduce((sum, item) => sum + item.quantity, 0);
+
+    const { data: company } = await supabase
+      .from("companies")
+      .select("id")
+      .eq("slug", data.slug)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (!company) return { ok: false as const };
+
+    // Só produtos ativos da própria empresa entram no registro do pedido.
+    const { data: valid } = await supabase
+      .from("products")
+      .select("id, title")
+      .eq("company_id", company.id)
+      .in(
+        "id",
+        data.items.map((item) => item.id),
+      );
+
+    const allowed = new Map((valid ?? []).map((row) => [row.id, row.title]));
+    const items = data.items.filter((item) => allowed.has(item.id));
+    if (items.length === 0) return { ok: false as const };
+
+    const total = items.reduce((sum, item) => sum + item.quantity, 0);
 
     const { data: order, error } = await supabase
       .from("orders")
-      .insert({ total_items: total })
+      .insert({ total_items: total, company_id: company.id })
       .select("id")
       .single();
 
@@ -96,10 +184,10 @@ export const recordOrder = createServerFn({ method: "POST" })
     }
 
     const { error: itemsError } = await supabase.from("order_items").insert(
-      data.items.map((item) => ({
+      items.map((item) => ({
         order_id: order.id,
         product_id: item.id,
-        product_title: item.title,
+        product_title: allowed.get(item.id) ?? item.title,
         quantity: item.quantity,
       })),
     );

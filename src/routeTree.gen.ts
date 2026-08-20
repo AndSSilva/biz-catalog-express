@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
+import { Route as SlugCarrinhoRouteImport } from './routes/$slug.carrinho'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
@@ -38,6 +39,11 @@ const CarrinhoRoute = CarrinhoRouteImport.update({
 const SlugIndexRoute = SlugIndexRouteImport.update({
   id: '/$slug/',
   path: '/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SlugCarrinhoRoute = SlugCarrinhoRouteImport.update({
+  id: '/$slug/carrinho',
+  path: '/$slug/carrinho',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
@@ -84,6 +90,7 @@ const AuthenticatedAdminProdutosNovoRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/carrinho': typeof CarrinhoRoute
+  '/$slug/carrinho': typeof SlugCarrinhoRoute
   '/admin/login': typeof AdminLoginRoute
   '/$slug/': typeof SlugIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/carrinho': typeof CarrinhoRoute
+  '/$slug/carrinho': typeof SlugCarrinhoRoute
   '/admin/login': typeof AdminLoginRoute
   '/$slug': typeof SlugIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/carrinho': typeof CarrinhoRoute
+  '/$slug/carrinho': typeof SlugCarrinhoRoute
   '/admin/login': typeof AdminLoginRoute
   '/$slug/': typeof SlugIndexRoute
   '/_authenticated/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/carrinho'
+    | '/$slug/carrinho'
     | '/admin/login'
     | '/$slug/'
     | '/admin/categorias'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/carrinho'
+    | '/$slug/carrinho'
     | '/admin/login'
     | '/$slug'
     | '/admin/categorias'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/carrinho'
+    | '/$slug/carrinho'
     | '/admin/login'
     | '/$slug/'
     | '/_authenticated/admin/categorias'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   CarrinhoRoute: typeof CarrinhoRoute
+  SlugCarrinhoRoute: typeof SlugCarrinhoRoute
   AdminLoginRoute: typeof AdminLoginRoute
   SlugIndexRoute: typeof SlugIndexRoute
 }
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/$slug'
       fullPath: '/$slug/'
       preLoaderRoute: typeof SlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$slug/carrinho': {
+      id: '/$slug/carrinho'
+      path: '/$slug/carrinho'
+      fullPath: '/$slug/carrinho'
+      preLoaderRoute: typeof SlugCarrinhoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/login': {
@@ -274,6 +294,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   CarrinhoRoute: CarrinhoRoute,
+  SlugCarrinhoRoute: SlugCarrinhoRoute,
   AdminLoginRoute: AdminLoginRoute,
   SlugIndexRoute: SlugIndexRoute,
 }

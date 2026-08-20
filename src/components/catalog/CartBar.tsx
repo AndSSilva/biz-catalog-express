@@ -1,15 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { ShoppingCart } from "lucide-react";
 
-type Props = { count: number };
+type Props = { slug: string; count: number };
 
-export function CartBar({ count }: Props) {
+export function CartBar({ slug, count }: Props) {
   if (count <= 0) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
       <Link
-        to="/carrinho"
+        to="/$slug/carrinho"
+        params={{ slug }}
         className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-full bg-primary px-5 py-4 text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
       >
         <span className="flex min-w-0 items-center gap-2 font-semibold">

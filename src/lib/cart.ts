@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 export type CartItem = {
   id: string;
@@ -7,20 +7,40 @@ export type CartItem = {
   quantity: number;
 };
 
-const STORAGE_KEY = "catalogo.cart.v1";
+const PREFIX = "catalogo.cart.v2";
 const EMPTY: CartItem[] = [];
 
+/** O carrinho é isolado por empresa (cada catálogo tem o seu). */
+let scope: string | null = null;
 let items: CartItem[] = EMPTY;
-let hydrated = false;
 const listeners = new Set<() => void>();
+
+function storageKey(slug: string) {
+  return `${PREFIX}:${slug}`;
+}
 
 function emit() {
   for (const listener of listeners) listener();
 }
 
-function persist() {
+function read(slug: string): CartItem[] {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    const raw = localStorage.getItem(storageKey(slug));
+    if (!raw) return EMPTY;
+    const parsed = JSON.parse(raw) as CartItem[];
+    if (!Array.isArray(parsed)) return EMPTY;
+    return parsed.filter(
+      (item) => item && typeof item.id === "string" && Number(item.quantity) > 0,
+    );
+  } catch {
+    return EMPTY;
+  }
+}
+
+function persist() {
+  if (!scope) return;
+  try {
+    localStorage.setItem(storageKey(scope), JSON.stringify(items));
   } catch {
     // storage indisponível (modo privado) — carrinho segue funcionando em memória
   }
@@ -32,23 +52,11 @@ function commit(next: CartItem[]) {
   emit();
 }
 
-/** Lê o carrinho salvo no navegador. Chamar apenas no cliente (useEffect). */
-export function hydrateCart() {
-  if (hydrated) return;
-  hydrated = true;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as CartItem[];
-      if (Array.isArray(parsed)) {
-        items = parsed.filter(
-          (item) => item && typeof item.id === "string" && Number(item.quantity) > 0,
-        );
-      }
-    }
-  } catch {
-    items = EMPTY;
-  }
+/** Define de qual empresa é o carrinho e carrega o que estava salvo no navegador. */
+export function setCartScope(slug: string) {
+  if (scope === slug) return;
+  scope = slug;
+  items = read(slug);
   emit();
 }
 
@@ -65,7 +73,10 @@ function getServerSnapshot() {
   return EMPTY;
 }
 
-export function useCart() {
+export function useCart(slug: string) {
+  useEffect(() => {
+    setCartScope(slug);
+  }, [slug]);
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 

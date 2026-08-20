@@ -2,8 +2,10 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { getCatalog } from "./catalog.functions";
 
-export const catalogQueryOptions = queryOptions({
-  queryKey: ["catalog"],
-  queryFn: () => getCatalog(),
-  staleTime: 60_000,
-});
+export function catalogQueryOptions(slug: string) {
+  return queryOptions({
+    queryKey: ["catalog", slug],
+    queryFn: () => getCatalog({ data: { slug } }),
+    staleTime: 60_000,
+  });
+}

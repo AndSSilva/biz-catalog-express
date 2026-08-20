@@ -16,34 +16,36 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { brandingStyle } from "@/lib/branding";
 import { clearCart, removeFromCart, setQuantity, totalItems, useCart } from "@/lib/cart";
 import { catalogQueryOptions } from "@/lib/catalog-queries";
 import { recordOrder } from "@/lib/catalog.functions";
 import { buildOrderMessage, buildWhatsappUrl } from "@/lib/whatsapp";
 
-export const Route = createFileRoute("/carrinho")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(catalogQueryOptions),
-  head: () => ({
-    meta: [
-      { title: "Seu carrinho — finalize o pedido no WhatsApp" },
-      {
-        name: "description",
-        content:
-          "Confira os produtos escolhidos, ajuste as quantidades e finalize o pedido pelo WhatsApp.",
-      },
-      { property: "og:title", content: "Seu carrinho — finalize o pedido no WhatsApp" },
-      {
-        property: "og:description",
-        content: "Confira os produtos escolhidos e finalize o pedido pelo WhatsApp.",
-      },
-    ],
-  }),
+export const Route = createFileRoute("/$slug/carrinho")({
+  loader: ({ context, params }) =>
+    context.queryClient.ensureQueryData(catalogQueryOptions(params.slug)),
+  head: ({ loaderData }) => {
+    const name = loaderData?.settings.storeName ?? "Catálogo";
+    const title = `Seu carrinho — ${name}`;
+    const description =
+      "Confira os produtos escolhidos, ajuste as quantidades e finalize o pedido pelo WhatsApp.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+      ],
+    };
+  },
   component: CartPage,
 });
 
 function CartPage() {
-  const { data } = useSuspenseQuery(catalogQueryOptions);
-  const items = useCart();
+  const { slug } = Route.useParams();
+  const { data } = useSuspenseQuery(catalogQueryOptions(slug));
+  const items = useCart(slug);
   const count = totalItems(items);
   const submitOrder = useServerFn(recordOrder);
 
@@ -65,6 +67,7 @@ function CartPage() {
     try {
       await submitOrder({
         data: {
+          slug,
           items: items.map((item) => ({
             id: item.id,
             title: item.title,
@@ -73,24 +76,24 @@ function CartPage() {
         },
       });
     } catch (error) {
-      // o pedido nunca é bloqueado por falha no registro
-      console.error(error);
+      console.error("recordOrder", error);
     }
 
     window.open(url, "_blank", "noopener,noreferrer");
     clearCart();
     setFinishing(false);
-    toast.success("Pedido enviado para o WhatsApp. Carrinho limpo.");
+    toast.success("Pedido enviado para o WhatsApp");
   }
 
   return (
-    <div className="min-h-screen bg-background pb-40">
+    <div className="min-h-screen bg-background pb-32" style={brandingStyle(data.company)}>
       <header className="border-b border-border bg-card/70">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-4">
           <Link
-            to="/"
-            aria-label="Voltar para o catálogo"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border transition-colors hover:bg-accent"
+            to="/$slug"
+            params={{ slug }}
+            aria-label="Voltar ao catálogo"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-background transition-colors hover:bg-accent"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden />
           </Link>
@@ -112,7 +115,9 @@ function CartPage() {
               Escolha os produtos no catálogo para montar seu pedido.
             </p>
             <Button asChild className="mt-6 h-12 rounded-full px-6">
-              <Link to="/">Ver produtos</Link>
+              <Link to="/$slug" params={{ slug }}>
+                Ver produtos
+              </Link>
             </Button>
           </div>
         ) : (

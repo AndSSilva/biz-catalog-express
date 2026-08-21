@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Building2, LogOut, Plus, ShieldCheck, UserPlus } from "lucide-react";
+import { Building2, LogOut, Plus, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 

@@ -20,6 +20,16 @@ export type Category = {
   sort_order: number;
 };
 
+export type AdminCompany = {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  isActive: boolean;
+};
+
 const IMAGE_URL_TTL = 60 * 60 * 24 * 365 * 10; // 10 anos
 
 export function useIsAdmin() {
@@ -35,14 +45,72 @@ export function useIsAdmin() {
         _role: "admin",
       });
       if (error) throw error;
-      if (data) return true;
-
-      // Primeiro acesso: o primeiro usuário cadastrado se torna administrador.
-      const { data: claimed } = await supabase.rpc("claim_admin");
-      return Boolean(claimed);
+      return Boolean(data);
     },
     staleTime: 30_000,
   });
+}
+
+export function useIsMaster() {
+  return useQuery({
+    queryKey: ["is-master"],
+    queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) return false;
+      const { data, error } = await supabase.rpc("is_master", { _user_id: userId });
+      if (error) throw error;
+      return Boolean(data);
+    },
+    staleTime: 30_000,
+  });
+}
+
+/** Empresa à qual o administrador logado está vinculado (definida pelo Admin Master). */
+export function useMyCompany() {
+  return useQuery({
+    queryKey: ["my-company"],
+    queryFn: async (): Promise<AdminCompany | null> => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) return null;
+
+      const { data: member, error: memberError } = await supabase
+        .from("company_members")
+        .select("company_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (memberError) throw memberError;
+      if (!member) return null;
+
+      const { data: company, error } = await supabase
+        .from("companies")
+        .select("id, name, slug, logo_url, primary_color, secondary_color, is_active")
+        .eq("id", member.company_id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!company) return null;
+
+      return {
+        id: company.id,
+        name: company.name,
+        slug: company.slug,
+        logoUrl: company.logo_url,
+        primaryColor: company.primary_color,
+        secondaryColor: company.secondary_color,
+        isActive: company.is_active,
+      };
+    },
+    staleTime: 60_000,
+  });
+}
+
+function useCompanyId() {
+  const { data: company } = useMyCompany();
+  return () => {
+    if (!company) throw new Error("Sua conta não está vinculada a nenhuma empresa.");
+    return company.id;
+  };
 }
 
 export function useAdminProducts() {
@@ -51,7 +119,9 @@ export function useAdminProducts() {
     queryFn: async (): Promise<AdminProduct[]> => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)")
+        .select(
+          "id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)",
+        )
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -66,7 +136,9 @@ export function useAdminProduct(id: string) {
     queryFn: async (): Promise<AdminProduct> => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)")
+        .select(
+          "id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)",
+        )
         .eq("id", id)
         .single();
       if (error) throw error;
@@ -129,6 +201,7 @@ function useInvalidateCategories() {
 
 export function useSaveCategory() {
   const invalidate = useInvalidateCategories();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (input: { id?: string | undefined; name: string; sort_order: number }) => {
       const payload = {
@@ -143,7 +216,7 @@ export function useSaveCategory() {
       }
       const { data, error } = await supabase
         .from("categories")
-        .insert(payload)
+        .insert({ ...payload, company_id: companyId() })
         .select("id")
         .single();
       if (error) throw error;
@@ -200,6 +273,7 @@ export function useInvalidateCatalog() {
 
 export function useSaveProduct() {
   const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
 
   return useMutation({
     mutationFn: async (input: {
@@ -236,6 +310,7 @@ export function useSaveProduct() {
           is_active: input.is_active,
           sort_order: input.sort_order,
           category_id: input.category_id,
+          company_id: companyId(),
         })
         .select("id")
         .single();
@@ -287,10 +362,13 @@ export function useReorderProducts() {
   });
 }
 
-/** Envia a foto para o armazenamento e devolve uma URL de leitura de longa duração. */
-export async function uploadProductImage(file: File) {
+/**
+ * Envia a foto para o armazenamento e devolve uma URL de leitura de longa duração.
+ * O arquivo fica na pasta da própria empresa (isolamento garantido pelo banco).
+ */
+export async function uploadProductImage(file: File, companyId: string) {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const path = `${crypto.randomUUID()}.${extension}`;
+  const path = `${companyId}/${crypto.randomUUID()}.${extension}`;
 
   const { error } = await supabase.storage
     .from("product-images")
@@ -367,10 +445,18 @@ export function useSettings() {
 
 export function useSaveSettings() {
   const queryClient = useQueryClient();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (values: Record<string, string>) => {
-      const rows = Object.entries(values).map(([key, value]) => ({ key, value }));
-      const { error } = await supabase.from("settings").upsert(rows, { onConflict: "key" });
+      const id = companyId();
+      const rows = Object.entries(values).map(([key, value]) => ({
+        key,
+        value,
+        company_id: id,
+      }));
+      const { error } = await supabase
+        .from("settings")
+        .upsert(rows, { onConflict: "company_id,key" });
       if (error) throw error;
     },
     onSuccess: () => {

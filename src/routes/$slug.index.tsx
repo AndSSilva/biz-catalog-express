@@ -183,32 +183,45 @@ function CatalogPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visibleProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                quantity={quantityOf(product.id)}
-                onAdd={() => {
-                  addToCart({
-                    id: product.id,
-                    title: product.title,
-                    imageUrl: product.image_url,
-                  });
-                  toast.success("Adicionado ao carrinho");
-                }}
-                onIncrement={() => setQuantity(product.id, quantityOf(product.id) + 1)}
-                onDecrement={() => {
-                  const next = quantityOf(product.id) - 1;
-                  setQuantity(product.id, next);
-                  if (next <= 0) toast("Produto removido do carrinho");
-                }}
-              />
-            ))}
+            {visibleProducts.map((product) => {
+              const actions = cartActions(product);
+              return (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  quantity={quantityOf(product.id)}
+                  onClick={() => setSelectedProduct(product)}
+                  {...actions}
+                />
+              );
+            })}
           </div>
         )}
       </main>
 
       <CartBar slug={slug} count={count} />
+
+      <ProductDetailModal
+        product={selectedProduct}
+        open={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        quantity={selectedProduct ? quantityOf(selectedProduct.id) : 0}
+        onAdd={() => {
+          if (selectedProduct) {
+            cartActions(selectedProduct).onAdd();
+          }
+        }}
+        onIncrement={() => {
+          if (selectedProduct) {
+            cartActions(selectedProduct).onIncrement();
+          }
+        }}
+        onDecrement={() => {
+          if (selectedProduct) {
+            cartActions(selectedProduct).onDecrement();
+          }
+        }}
+      />
     </div>
   );
 }

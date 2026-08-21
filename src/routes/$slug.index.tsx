@@ -6,10 +6,12 @@ import { toast } from "sonner";
 
 import { CartBar } from "@/components/catalog/CartBar";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { ProductDetailModal } from "@/components/catalog/ProductDetailModal";
 import { Button } from "@/components/ui/button";
 import { brandingStyle } from "@/lib/branding";
 import { addToCart, setQuantity, totalItems, useCart } from "@/lib/cart";
 import { catalogQueryOptions } from "@/lib/catalog-queries";
+import type { CatalogProduct } from "@/lib/catalog.functions";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ context, params }) =>

@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createCompanyAdmin, listCompanies, saveCompany, setCompanyActive } from "./master.functions";
+import {
+  createCompanyAdmin,
+  deleteCompany,
+  listCompanies,
+  saveCompany,
+  setCompanyActive,
+} from "./master.functions";
+
 
 export function useMasterCompanies() {
   return useQuery({
@@ -79,6 +86,14 @@ export function useCreateCompanyAdmin() {
       email: string;
       password: string;
     }) => createCompanyAdmin({ data: input }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteCompany() {
+  const invalidate = useInvalidateCompanies();
+  return useMutation({
+    mutationFn: (input: { id: string; confirmSlug: string }) => deleteCompany({ data: input }),
     onSuccess: invalidate,
   });
 }

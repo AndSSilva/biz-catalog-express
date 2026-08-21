@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Building2, LogOut, Plus, ShieldCheck, UserPlus } from "lucide-react";
+import { Building2, LogOut, Plus, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -20,10 +20,12 @@ import { useIsMaster } from "@/lib/admin-data";
 import { slugify } from "@/lib/branding";
 import {
   useCreateCompanyAdmin,
+  useDeleteCompany,
   useMasterCompanies,
   useSaveCompany,
   useToggleCompanyActive,
 } from "@/lib/master-data";
+
 import type { MasterCompany } from "@/lib/master.functions";
 
 export const Route = createFileRoute("/_authenticated/master/")({
@@ -50,6 +52,8 @@ function MasterPage() {
 
   const [companyForm, setCompanyForm] = useState<MasterCompany | "new" | null>(null);
   const [adminFor, setAdminFor] = useState<MasterCompany | null>(null);
+  const [deleteFor, setDeleteFor] = useState<MasterCompany | null>(null);
+
 
   if (isLoading) {
     return (
@@ -203,6 +207,14 @@ function MasterPage() {
                     <UserPlus className="mr-1 h-4 w-4" aria-hidden />
                     Admin
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="h-11 rounded-full text-destructive hover:text-destructive"
+                    onClick={() => setDeleteFor(company)}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" aria-hidden />
+                    Remover
+                  </Button>
                 </div>
               </li>
             ))}
@@ -212,6 +224,8 @@ function MasterPage() {
 
       <CompanyDialog company={companyForm} onClose={() => setCompanyForm(null)} />
       <AdminDialog company={adminFor} onClose={() => setAdminFor(null)} />
+      <DeleteCompanyDialog company={deleteFor} onClose={() => setDeleteFor(null)} />
+
     </div>
   );
 }
@@ -462,6 +476,88 @@ function AdminDialog({
             </Button>
             <Button type="submit" className="h-12 rounded-full px-6" disabled={create.isPending}>
               {create.isPending ? "Criando..." : "Criar acesso"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteCompanyDialog({
+  company,
+  onClose,
+}: {
+  company: MasterCompany | null;
+  onClose: () => void;
+}) {
+  const remove = useDeleteCompany();
+  const [confirm, setConfirm] = useState("");
+
+  return (
+    <Dialog
+      open={Boolean(company)}
+      onOpenChange={(open) => {
+        if (!open) {
+          setConfirm("");
+          onClose();
+        }
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Remover empresa</DialogTitle>
+          <DialogDescription>
+            Esta ação apaga definitivamente produtos, categorias, pedidos, configurações e as contas
+            de administrador de {company?.name ?? "empresa"}. Para apenas esconder o catálogo, use a
+            chave "Ativa".
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!company) return;
+            remove.mutate(
+              { id: company.id, confirmSlug: confirm.trim() },
+              {
+                onSuccess: () => {
+                  toast.success("Empresa removida");
+                  setConfirm("");
+                  onClose();
+                },
+                onError: (error) =>
+                  toast.error(error instanceof Error ? error.message : "Falha ao remover"),
+              },
+            );
+          }}
+        >
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="delete-confirm">
+              Digite <span className="font-semibold">{company?.slug}</span> para confirmar
+            </Label>
+            <Input
+              id="delete-confirm"
+              required
+              autoComplete="off"
+              className="h-12"
+              value={confirm}
+              onChange={(event) => setConfirm(event.target.value)}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" className="h-12 rounded-full" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="destructive"
+              className="h-12 rounded-full px-6"
+              disabled={remove.isPending || confirm.trim() !== company?.slug}
+            >
+              {remove.isPending ? "Removendo..." : "Remover definitivamente"}
             </Button>
           </DialogFooter>
         </form>

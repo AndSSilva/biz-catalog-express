@@ -164,6 +164,55 @@ export const setCompanyActive = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Exclusão definitiva: apaga produtos, pedidos, configurações e contas de admin da empresa. */
+export const deleteCompany = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), confirmSlug: z.string().trim().min(1) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertMaster(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: company, error: loadError } = await supabaseAdmin
+      .from("companies")
+      .select("id, slug")
+      .eq("id", data.id)
+      .single();
+    if (loadError || !company) throw new Error("Empresa não encontrada.");
+    if (company.slug !== data.confirmSlug) throw new Error("Confirmação não corresponde ao endereço da empresa.");
+
+    const { data: orders } = await supabaseAdmin
+      .from("orders")
+      .select("id")
+      .eq("company_id", company.id);
+    const orderIds = (orders ?? []).map((order) => order.id);
+    if (orderIds.length > 0) {
+      await supabaseAdmin.from("order_items").delete().in("order_id", orderIds);
+      await supabaseAdmin.from("orders").delete().eq("company_id", company.id);
+    }
+
+    await supabaseAdmin.from("products").delete().eq("company_id", company.id);
+    await supabaseAdmin.from("categories").delete().eq("company_id", company.id);
+    await supabaseAdmin.from("settings").delete().eq("company_id", company.id);
+
+    const { data: members } = await supabaseAdmin
+      .from("company_members")
+      .select("user_id")
+      .eq("company_id", company.id);
+    await supabaseAdmin.from("company_members").delete().eq("company_id", company.id);
+
+    for (const member of members ?? []) {
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", member.user_id);
+      await supabaseAdmin.auth.admin.deleteUser(member.user_id);
+    }
+
+    const { error } = await supabaseAdmin.from("companies").delete().eq("id", company.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+
 export const createCompanyAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>

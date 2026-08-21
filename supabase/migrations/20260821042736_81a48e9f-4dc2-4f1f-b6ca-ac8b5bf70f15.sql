@@ -1,0 +1,1 @@
+UPDATE public.settings s SET value = c.name, updated_at = now() FROM public.companies c WHERE c.id = s.company_id AND s.key = 'store_name' AND (s.value = '' OR s.value = 'Catálogo');

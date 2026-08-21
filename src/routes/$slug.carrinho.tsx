@@ -52,7 +52,8 @@ function CartPage() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
-  async function handleFinish() {
+
+  function handleFinish() {
     if (items.length === 0 || finishing) return;
     const number = data.settings.whatsappNumber;
     if (!number) {
@@ -63,27 +64,41 @@ function CartPage() {
     setFinishing(true);
     const message = buildOrderMessage(items, data.settings.greeting);
     const url = buildWhatsappUrl(number, message);
+    const payload = {
+      slug,
+      items: items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        quantity: item.quantity,
+      })),
+    };
 
+    // Abre o WhatsApp de forma sincrona (dentro do gesto do usuário),
+    // senão o navegador bloqueia como popup.
+    let opened: Window | null = null;
     try {
-      await submitOrder({
-        data: {
-          slug,
-          items: items.map((item) => ({
-            id: item.id,
-            title: item.title,
-            quantity: item.quantity,
-          })),
-        },
-      });
-    } catch (error) {
-      console.error("recordOrder", error);
+      opened = window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      opened = null;
+    }
+    if (!opened) {
+      try {
+        (window.top ?? window).location.href = url;
+      } catch {
+        window.location.href = url;
+      }
     }
 
-    window.open(url, "_blank", "noopener,noreferrer");
+    // Registra a conversão em background.
+    void submitOrder({ data: payload }).catch((error) => {
+      console.error("recordOrder", error);
+    });
+
     clearCart();
     setFinishing(false);
     toast.success("Pedido enviado para o WhatsApp");
   }
+
 
   return (
     <div className="min-h-screen bg-background pb-32" style={brandingStyle(data.company)}>

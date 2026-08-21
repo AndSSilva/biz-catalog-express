@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createCompanyAdmin, listCompanies, saveCompany, setCompanyActive } from "./master.functions";
+import {
+  createCompanyAdmin,
+  deleteCompany,
+  listCompanies,
+  saveCompany,
+  setCompanyActive,
+} from "./master.functions";
+
 
 export function useMasterCompanies() {
   return useQuery({

@@ -52,6 +52,8 @@ function MasterPage() {
 
   const [companyForm, setCompanyForm] = useState<MasterCompany | "new" | null>(null);
   const [adminFor, setAdminFor] = useState<MasterCompany | null>(null);
+  const [deleteFor, setDeleteFor] = useState<MasterCompany | null>(null);
+
 
   if (isLoading) {
     return (

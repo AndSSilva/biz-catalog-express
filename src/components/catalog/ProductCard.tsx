@@ -9,13 +9,17 @@ type Props = {
   onAdd: () => void;
   onIncrement: () => void;
   onDecrement: () => void;
+  onClick: () => void;
 };
 
-export function ProductCard({ product, quantity, onAdd, onIncrement, onDecrement }: Props) {
+export function ProductCard({ product, quantity, onAdd, onIncrement, onDecrement, onClick }: Props) {
   const inCart = quantity > 0;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+    <article
+      onClick={onClick}
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md cursor-pointer"
+    >
       <div className="relative aspect-4/3 w-full overflow-hidden bg-muted">
         {product.image_url ? (
           <img
@@ -46,44 +50,53 @@ export function ProductCard({ product, quantity, onAdd, onIncrement, onDecrement
           {product.description}
         </p>
 
-        <div className="mt-auto pt-3">
-          {inCart ? (
-            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-full border border-border bg-secondary/60 p-1">
+          <div className="mt-auto pt-3">
+            {inCart ? (
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-full border border-border bg-secondary/60 p-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-full"
+                  aria-label={`Diminuir quantidade de ${product.title}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDecrement();
+                  }}
+                >
+                  <Minus className="h-4 w-4" aria-hidden />
+                </Button>
+                <span className="text-center text-sm font-semibold" aria-live="polite">
+                  {quantity} {quantity === 1 ? "unidade" : "unidades"}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-full"
+                  aria-label={`Aumentar quantidade de ${product.title}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onIncrement();
+                  }}
+                >
+                  <Plus className="h-4 w-4" aria-hidden />
+                </Button>
+              </div>
+            ) : (
               <Button
                 type="button"
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 shrink-0 rounded-full"
-                aria-label={`Diminuir quantidade de ${product.title}`}
-                onClick={onDecrement}
+                className="h-12 w-full rounded-full text-sm font-semibold"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdd();
+                }}
               >
-                <Minus className="h-4 w-4" aria-hidden />
+                <Plus className="mr-1 h-4 w-4" aria-hidden />
+                Adicionar
               </Button>
-              <span className="text-center text-sm font-semibold" aria-live="polite">
-                {quantity} {quantity === 1 ? "unidade" : "unidades"}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 shrink-0 rounded-full"
-                aria-label={`Aumentar quantidade de ${product.title}`}
-                onClick={onIncrement}
-              >
-                <Plus className="h-4 w-4" aria-hidden />
-              </Button>
-            </div>
-          ) : (
-            <Button
-              type="button"
-              className="h-12 w-full rounded-full text-sm font-semibold"
-              onClick={onAdd}
-            >
-              <Plus className="mr-1 h-4 w-4" aria-hidden />
-              Adicionar
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
       </div>
     </article>
   );

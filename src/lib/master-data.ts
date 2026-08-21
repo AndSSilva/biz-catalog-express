@@ -89,3 +89,11 @@ export function useCreateCompanyAdmin() {
     onSuccess: invalidate,
   });
 }
+
+export function useDeleteCompany() {
+  const invalidate = useInvalidateCompanies();
+  return useMutation({
+    mutationFn: (input: { id: string; confirmSlug: string }) => deleteCompany({ data: input }),
+    onSuccess: invalidate,
+  });
+}

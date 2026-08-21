@@ -52,13 +52,6 @@ function CartPage() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
-  async function handleFinish() {
-    if (items.length === 0 || finishing) return;
-    const number = data.settings.whatsappNumber;
-    if (!number) {
-      toast.error("O número de WhatsApp da loja ainda não foi configurado.");
-      return;
-    }
 
   function handleFinish() {
     if (items.length === 0 || finishing) return;

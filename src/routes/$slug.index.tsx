@@ -69,6 +69,7 @@ function CatalogPage() {
   const cart = useCart(slug);
   const count = totalItems(cart);
   const [categoryId, setCategoryId] = useState<string>("all");
+  const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
 
   const categories = data.categories ?? [];
   const visibleProducts = useMemo(
@@ -80,6 +81,23 @@ function CatalogPage() {
   );
 
   const quantityOf = (id: string) => cart.find((item) => item.id === id)?.quantity ?? 0;
+
+  const cartActions = (product: CatalogProduct) => ({
+    onAdd: () => {
+      addToCart({
+        id: product.id,
+        title: product.title,
+        imageUrl: product.image_url,
+      });
+      toast.success("Adicionado ao carrinho");
+    },
+    onIncrement: () => setQuantity(product.id, quantityOf(product.id) + 1),
+    onDecrement: () => {
+      const next = quantityOf(product.id) - 1;
+      setQuantity(product.id, next);
+      if (next <= 0) toast("Produto removido do carrinho");
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background pb-28" style={brandingStyle(data.company)}>

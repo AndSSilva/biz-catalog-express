@@ -20,10 +20,12 @@ import { useIsMaster } from "@/lib/admin-data";
 import { slugify } from "@/lib/branding";
 import {
   useCreateCompanyAdmin,
+  useDeleteCompany,
   useMasterCompanies,
   useSaveCompany,
   useToggleCompanyActive,
 } from "@/lib/master-data";
+
 import type { MasterCompany } from "@/lib/master.functions";
 
 export const Route = createFileRoute("/_authenticated/master/")({

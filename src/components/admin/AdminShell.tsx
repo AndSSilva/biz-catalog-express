@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BarChart3, LogOut, Package, Settings, Tags } from "lucide-react";
+import { BarChart3, ExternalLink, LogOut, Package, Settings, Tags } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin } from "@/lib/admin-data";
+import { useIsAdmin, useMyCompany } from "@/lib/admin-data";
+import { brandingStyle } from "@/lib/branding";
 
 const links = [
   { to: "/admin", label: "Dashboard", icon: BarChart3 },
@@ -16,8 +17,14 @@ const links = [
 export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
   const navigate = useNavigate();
   const { data: isAdmin, isLoading } = useIsAdmin();
+  const { data: company, isLoading: loadingCompany } = useMyCompany();
 
-  if (isLoading) {
+  async function signOut() {
+    await supabase.auth.signOut();
+    void navigate({ to: "/admin/login" });
+  }
+
+  if (isLoading || loadingCompany) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         Carregando...
@@ -32,14 +39,21 @@ export function AdminShell({ title, children }: { title: string; children: React
         <p className="text-sm text-muted-foreground">
           Esta conta não tem permissão de administrador.
         </p>
-        <Button
-          variant="outline"
-          className="h-12 rounded-full px-6"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            void navigate({ to: "/admin/login" });
-          }}
-        >
+        <Button variant="outline" className="h-12 rounded-full px-6" onClick={signOut}>
+          Sair
+        </Button>
+      </main>
+    );
+  }
+
+  if (!company) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 px-5 text-center">
+        <h1 className="text-2xl font-bold">Conta sem empresa vinculada</h1>
+        <p className="text-sm text-muted-foreground">
+          Solicite ao responsável pela plataforma o vínculo da sua conta a uma empresa.
+        </p>
+        <Button variant="outline" className="h-12 rounded-full px-6" onClick={signOut}>
           Sair
         </Button>
       </main>
@@ -47,21 +61,34 @@ export function AdminShell({ title, children }: { title: string; children: React
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={brandingStyle(company)}>
       <header className="border-b border-border bg-card">
         <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 sm:flex sm:justify-between">
-          <h1 className="truncate text-xl font-extrabold">{title}</h1>
-          <Button
-            variant="ghost"
-            className="h-11 shrink-0 rounded-full"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              void navigate({ to: "/admin/login" });
-            }}
-          >
-            <LogOut className="mr-1 h-4 w-4" aria-hidden />
-            Sair
-          </Button>
+          <div className="flex min-w-0 items-center gap-3">
+            {company.logoUrl ? (
+              <img
+                src={company.logoUrl}
+                alt={`Logo ${company.name}`}
+                className="h-10 w-10 shrink-0 rounded-lg object-cover"
+              />
+            ) : null}
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-extrabold">{title}</h1>
+              <p className="truncate text-xs text-muted-foreground">{company.name}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button asChild variant="ghost" className="h-11 rounded-full">
+              <Link to="/$slug" params={{ slug: company.slug }} target="_blank">
+                <ExternalLink className="mr-1 h-4 w-4" aria-hidden />
+                Ver catálogo
+              </Link>
+            </Button>
+            <Button variant="ghost" className="h-11 rounded-full" onClick={signOut}>
+              <LogOut className="mr-1 h-4 w-4" aria-hidden />
+              Sair
+            </Button>
+          </div>
         </div>
         <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 pb-3">
           {links.map((link) => (

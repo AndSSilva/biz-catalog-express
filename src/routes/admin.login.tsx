@@ -22,7 +22,6 @@ export const Route = createFileRoute("/admin/login")({
 
 function AdminLogin() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,31 +30,21 @@ function AdminLogin() {
     event.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/admin/login` },
-        });
-        if (error) throw error;
-        const { data: session } = await supabase.auth.getSession();
-        if (session.session) {
-          await supabase.rpc("claim_admin");
-          toast.success("Conta criada. Bem-vindo!");
-          void navigate({ to: "/admin" });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      const userId = data.user?.id;
+      if (userId) {
+        const { data: isMaster } = await supabase.rpc("is_master", { _user_id: userId });
+        if (isMaster) {
+          void navigate({ to: "/master" });
           return;
         }
-        toast.success("Conta criada. Confirme o e-mail para entrar.");
-        setMode("signin");
-        return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      await supabase.rpc("claim_admin");
       void navigate({ to: "/admin" });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível entrar.");
+    } catch {
+      toast.error("E-mail ou senha inválidos.");
     } finally {
       setLoading(false);
     }
@@ -66,9 +55,7 @@ function AdminLogin() {
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h1 className="text-2xl font-extrabold">Área do administrador</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {mode === "signin"
-            ? "Entre para gerenciar produtos e pedidos."
-            : "Crie a conta do dono do negócio."}
+          Entre com os dados enviados pelo responsável pela plataforma.
         </p>
 
         <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -89,7 +76,7 @@ function AdminLogin() {
             <Input
               id="password"
               type="password"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              autoComplete="current-password"
               required
               minLength={6}
               className="h-12"
@@ -99,17 +86,9 @@ function AdminLogin() {
           </div>
 
           <Button type="submit" className="h-12 rounded-full text-base" disabled={loading}>
-            {loading ? "Aguarde..." : mode === "signin" ? "Entrar" : "Criar conta"}
+            {loading ? "Aguarde..." : "Entrar"}
           </Button>
         </form>
-
-        <button
-          type="button"
-          className="mt-4 w-full text-sm text-muted-foreground underline-offset-4 hover:underline"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-        >
-          {mode === "signin" ? "Primeiro acesso? Criar conta" : "Já tenho conta. Entrar"}
-        </button>
       </div>
     </main>
   );

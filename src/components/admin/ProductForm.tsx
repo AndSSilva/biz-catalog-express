@@ -20,6 +20,7 @@ import { generateProductCopy } from "@/lib/ai.functions";
 import {
   uploadProductImage,
   useCategories,
+  useMyCompany,
   useSaveProduct,
   type AdminProduct,
 } from "@/lib/admin-data";
@@ -29,6 +30,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const save = useSaveProduct();
   const generate = useServerFn(generateProductCopy);
   const categories = useCategories();
+  const { data: company } = useMyCompany();
 
   const [title, setTitle] = useState(product?.title ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
@@ -41,9 +43,13 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const [generating, setGenerating] = useState(false);
 
   async function handleUpload(file: File) {
+    if (!company) {
+      toast.error("Sua conta não está vinculada a nenhuma empresa.");
+      return;
+    }
     setUploading(true);
     try {
-      const url = await uploadProductImage(file);
+      const url = await uploadProductImage(file, company.id);
       setImageUrl(url);
       toast.success("Foto enviada");
     } catch (error) {

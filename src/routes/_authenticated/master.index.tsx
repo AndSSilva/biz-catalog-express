@@ -483,3 +483,85 @@ function AdminDialog({
     </Dialog>
   );
 }
+
+function DeleteCompanyDialog({
+  company,
+  onClose,
+}: {
+  company: MasterCompany | null;
+  onClose: () => void;
+}) {
+  const remove = useDeleteCompany();
+  const [confirm, setConfirm] = useState("");
+
+  return (
+    <Dialog
+      open={Boolean(company)}
+      onOpenChange={(open) => {
+        if (!open) {
+          setConfirm("");
+          onClose();
+        }
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Remover empresa</DialogTitle>
+          <DialogDescription>
+            Esta ação apaga definitivamente produtos, categorias, pedidos, configurações e as contas
+            de administrador de {company?.name ?? "empresa"}. Para apenas esconder o catálogo, use a
+            chave "Ativa".
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!company) return;
+            remove.mutate(
+              { id: company.id, confirmSlug: confirm.trim() },
+              {
+                onSuccess: () => {
+                  toast.success("Empresa removida");
+                  setConfirm("");
+                  onClose();
+                },
+                onError: (error) =>
+                  toast.error(error instanceof Error ? error.message : "Falha ao remover"),
+              },
+            );
+          }}
+        >
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="delete-confirm">
+              Digite <span className="font-semibold">{company?.slug}</span> para confirmar
+            </Label>
+            <Input
+              id="delete-confirm"
+              required
+              autoComplete="off"
+              className="h-12"
+              value={confirm}
+              onChange={(event) => setConfirm(event.target.value)}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" className="h-12 rounded-full" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="destructive"
+              className="h-12 rounded-full px-6"
+              disabled={remove.isPending || confirm.trim() !== company?.slug}
+            >
+              {remove.isPending ? "Removendo..." : "Remover definitivamente"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

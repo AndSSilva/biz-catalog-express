@@ -203,6 +203,14 @@ function MasterPage() {
                     <UserPlus className="mr-1 h-4 w-4" aria-hidden />
                     Admin
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="h-11 rounded-full text-destructive hover:text-destructive"
+                    onClick={() => setDeleteFor(company)}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" aria-hidden />
+                    Remover
+                  </Button>
                 </div>
               </li>
             ))}
@@ -212,6 +220,8 @@ function MasterPage() {
 
       <CompanyDialog company={companyForm} onClose={() => setCompanyForm(null)} />
       <AdminDialog company={adminFor} onClose={() => setAdminFor(null)} />
+      <DeleteCompanyDialog company={deleteFor} onClose={() => setDeleteFor(null)} />
+
     </div>
   );
 }

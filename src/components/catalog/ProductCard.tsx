@@ -9,13 +9,17 @@ type Props = {
   onAdd: () => void;
   onIncrement: () => void;
   onDecrement: () => void;
+  onClick: () => void;
 };
 
-export function ProductCard({ product, quantity, onAdd, onIncrement, onDecrement }: Props) {
+export function ProductCard({ product, quantity, onAdd, onIncrement, onDecrement, onClick }: Props) {
   const inCart = quantity > 0;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+    <article
+      onClick={onClick}
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md cursor-pointer"
+    >
       <div className="relative aspect-4/3 w-full overflow-hidden bg-muted">
         {product.image_url ? (
           <img

@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
 import { Route as SlugCarrinhoRouteImport } from './routes/$slug.carrinho'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as MasterLoginRouteImport } from './routes/master.login'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
 import { Route as AuthenticatedAdminConfigRouteImport } from './routes/_authenticated/admin.config'
@@ -43,6 +44,11 @@ const SlugCarrinhoRoute = SlugCarrinhoRouteImport.update({
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterLoginRoute = MasterLoginRouteImport.update({
+  id: '/master/login',
+  path: '/master/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$slug/carrinho': typeof SlugCarrinhoRoute
   '/admin/login': typeof AdminLoginRoute
+  '/master/login': typeof MasterLoginRoute
   '/$slug/': typeof SlugIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/config': typeof AuthenticatedAdminConfigRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$slug/carrinho': typeof SlugCarrinhoRoute
   '/admin/login': typeof AdminLoginRoute
+  '/master/login': typeof MasterLoginRoute
   '/$slug': typeof SlugIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/config': typeof AuthenticatedAdminConfigRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/$slug/carrinho': typeof SlugCarrinhoRoute
   '/admin/login': typeof AdminLoginRoute
+  '/master/login': typeof MasterLoginRoute
   '/$slug/': typeof SlugIndexRoute
   '/_authenticated/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/_authenticated/admin/config': typeof AuthenticatedAdminConfigRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$slug/carrinho'
     | '/admin/login'
+    | '/master/login'
     | '/$slug/'
     | '/admin/categorias'
     | '/admin/config'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$slug/carrinho'
     | '/admin/login'
+    | '/master/login'
     | '/$slug'
     | '/admin/categorias'
     | '/admin/config'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/$slug/carrinho'
     | '/admin/login'
+    | '/master/login'
     | '/$slug/'
     | '/_authenticated/admin/categorias'
     | '/_authenticated/admin/config'
@@ -164,6 +176,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   SlugCarrinhoRoute: typeof SlugCarrinhoRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  MasterLoginRoute: typeof MasterLoginRoute
   SlugIndexRoute: typeof SlugIndexRoute
 }
 
@@ -202,6 +215,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/login': {
+      id: '/master/login'
+      path: '/master/login'
+      fullPath: '/master/login'
+      preLoaderRoute: typeof MasterLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/': {
@@ -275,6 +295,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   SlugCarrinhoRoute: SlugCarrinhoRoute,
   AdminLoginRoute: AdminLoginRoute,
+  MasterLoginRoute: MasterLoginRoute,
   SlugIndexRoute: SlugIndexRoute,
 }
 export const routeTree = rootRouteImport

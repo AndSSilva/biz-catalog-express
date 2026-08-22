@@ -228,19 +228,24 @@ export function useSaveCategory() {
   const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (input: { id?: string | undefined; name: string; sort_order: number }) => {
+      const id = companyId();
       const payload = {
         name: input.name,
         slug: slugifyCategory(input.name) || crypto.randomUUID().slice(0, 8),
         sort_order: input.sort_order,
       };
       if (input.id) {
-        const { error } = await supabase.from("categories").update(payload).eq("id", input.id);
+        const { error } = await supabase
+          .from("categories")
+          .update(payload)
+          .eq("id", input.id)
+          .eq("company_id", id);
         if (error) throw error;
         return input.id;
       }
       const { data, error } = await supabase
         .from("categories")
-        .insert({ ...payload, company_id: companyId() })
+        .insert({ ...payload, company_id: id })
         .select("id")
         .single();
       if (error) throw error;
@@ -252,24 +257,49 @@ export function useSaveCategory() {
 
 export function useDeleteCategory() {
   const invalidate = useInvalidateCategories();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (id: string) => {
+      const company = companyId();
       const { count, error: countError } = await supabase
         .from("products")
         .select("id", { count: "exact", head: true })
-        .eq("category_id", id);
+        .eq("category_id", id)
+        .eq("company_id", company);
       if (countError) throw countError;
       if ((count ?? 0) > 0) {
         throw new Error(
           "Esta categoria possui produtos vinculados. Mova os produtos para outra categoria antes de excluir.",
         );
       }
-      const { error } = await supabase.from("categories").delete().eq("id", id);
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", company);
       if (error) throw error;
     },
     onSuccess: invalidate,
   });
 }
+
+/** Move todos os produtos de uma categoria para outra (dentro da própria empresa). */
+export function useMoveCategoryProducts() {
+  const invalidate = useInvalidateCategories();
+  const companyId = useCompanyId();
+  return useMutation({
+    mutationFn: async ({ fromId, toId }: { fromId: string; toId: string }) => {
+      const { error } = await supabase
+        .from("products")
+        .update({ category_id: toId })
+        .eq("category_id", fromId)
+        .eq("company_id", companyId());
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
 
 /** Move todos os produtos de uma categoria para outra. */
 export function useMoveCategoryProducts() {

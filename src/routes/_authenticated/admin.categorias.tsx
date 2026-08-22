@@ -118,7 +118,7 @@ function CategoriesPage() {
     <AdminShell title="Categorias">
       <form className="mb-5 flex flex-col gap-2" onSubmit={handleCreate}>
         <Label htmlFor="new-category">Nova categoria</Label>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             id="new-category"
             className="h-12"
@@ -126,7 +126,11 @@ function CategoriesPage() {
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
           />
-          <Button type="submit" className="h-12 shrink-0 rounded-full" disabled={save.isPending}>
+          <Button
+            type="submit"
+            className="h-12 w-full shrink-0 rounded-full sm:w-auto"
+            disabled={save.isPending}
+          >
             <Plus className="mr-1 h-4 w-4" aria-hidden />
             Criar
           </Button>
@@ -149,12 +153,12 @@ function CategoriesPage() {
         {(data ?? []).map((category) => (
           <li
             key={category.id}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
+            className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4"
           >
             {editing?.id === category.id ? (
               <>
                 <Input
-                  className="h-11"
+                  className="h-12 min-w-[10rem] flex-1"
                   value={editing.name}
                   onChange={(event) => setEditing({ id: category.id, name: event.target.value })}
                 />
@@ -179,8 +183,8 @@ function CategoriesPage() {
               </>
             ) : (
               <>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{category.name}</p>
+                <div className="min-w-[8rem] flex-1">
+                  <p className="text-sm font-semibold break-words">{category.name}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {counts.data?.get(category.id) ?? 0} produto(s) · {category.slug}
                   </p>

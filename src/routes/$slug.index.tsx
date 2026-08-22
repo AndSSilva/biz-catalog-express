@@ -100,18 +100,18 @@ function CatalogPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-28" style={brandingStyle(data.company)}>
+    <div className="min-h-screen bg-background pb-[calc(6.5rem+env(safe-area-inset-bottom))]" style={brandingStyle(data.company)}>
       <header className="border-b border-border bg-card/70">
-        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-5 sm:flex sm:justify-between">
+        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:flex sm:px-5 sm:py-5 sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             {data.company.logoUrl ? (
               <img
                 src={data.company.logoUrl}
                 alt={`Logo ${data.company.name}`}
-                className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                className="h-11 w-11 shrink-0 rounded-xl object-cover sm:h-12 sm:w-12"
               />
             ) : (
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-secondary sm:h-12 sm:w-12 text-secondary-foreground">
                 <ShoppingBag className="h-5 w-5" aria-hidden />
               </span>
             )}
@@ -119,7 +119,7 @@ function CatalogPage() {
               <h1 className="truncate text-xl font-extrabold sm:text-2xl">
                 {data.settings.storeName}
               </h1>
-              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+              <p className="mt-0.5 line-clamp-2 text-[0.8125rem] leading-snug text-muted-foreground sm:mt-1 sm:text-sm">
                 {data.settings.storeTagline}
               </p>
             </div>
@@ -140,16 +140,17 @@ function CatalogPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-5 sm:py-6">
         {categories.length > 0 && (
           <div className="mb-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Categoria
             </p>
+            <div className="relative">
             <div
               role="group"
               aria-label="Filtrar por categoria"
-              className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+              className="no-scrollbar -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
             >
               {[{ id: "all", name: "Todas" }, ...categories].map((category) => {
                 const active = categoryId === category.id;
@@ -159,7 +160,7 @@ function CatalogPage() {
                     type="button"
                     aria-pressed={active}
                     onClick={() => setCategoryId(category.id)}
-                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    className={`min-h-11 shrink-0 snap-start rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${
                       active
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border bg-card text-foreground hover:bg-accent"
@@ -169,6 +170,11 @@ function CatalogPage() {
                   </button>
                 );
               })}
+            </div>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden"
+            />
             </div>
           </div>
         )}
@@ -182,7 +188,7 @@ function CatalogPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
             {visibleProducts.map((product) => {
               const actions = cartActions(product);
               return (

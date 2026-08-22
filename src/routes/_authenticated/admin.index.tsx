@@ -20,7 +20,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold">{value}</p>
+      <p className="mt-1 line-clamp-2 text-xl font-extrabold break-words sm:text-2xl">{value}</p>
     </div>
   );
 }

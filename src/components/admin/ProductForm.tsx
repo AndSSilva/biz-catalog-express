@@ -173,8 +173,8 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
 
       <div className="flex flex-col gap-3">
         <Label htmlFor="photo">Foto</Label>
-        <div className="flex items-center gap-3">
-          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-muted sm:h-20 sm:w-20">
             {imageUrl ? (
               <img src={imageUrl} alt="" className="h-full w-full object-cover" />
             ) : (
@@ -188,6 +188,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
               id="photo"
               type="file"
               accept="image/*"
+              className="h-12 py-2.5 file:mr-3 file:h-full"
               disabled={uploading}
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -195,7 +196,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
               }}
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              {uploading ? "Enviando foto..." : "JPG ou PNG, proporção quadrada fica melhor."}
+              {uploading ? "Enviando foto..." : "Tire uma foto ou escolha da galeria. JPG ou PNG, proporção quadrada fica melhor."}
             </p>
           </div>
         </div>
@@ -221,14 +222,14 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         />
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <Button type="submit" className="h-12 flex-1 rounded-full" disabled={save.isPending}>
           {save.isPending ? "Salvando..." : "Salvar produto"}
         </Button>
         <Button
           type="button"
           variant="outline"
-          className="h-12 rounded-full"
+          className="h-12 rounded-full sm:w-auto"
           onClick={() => void navigate({ to: "/admin/produtos" })}
         >
           Cancelar

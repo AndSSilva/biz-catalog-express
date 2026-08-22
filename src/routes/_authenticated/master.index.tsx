@@ -109,12 +109,15 @@ function MasterPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-6">
+      <main className="mx-auto max-w-5xl px-4 py-5 sm:px-5 sm:py-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
             {companies.data?.length ?? 0} empresa(s) cadastrada(s)
           </p>
-          <Button className="h-12 rounded-full px-5" onClick={() => setCompanyForm("new")}>
+          <Button
+            className="h-12 w-full rounded-full px-5 sm:w-auto"
+            onClick={() => setCompanyForm("new")}
+          >
             <Plus className="mr-1 h-4 w-4" aria-hidden />
             Nova empresa
           </Button>
@@ -137,8 +140,9 @@ function MasterPage() {
             {(companies.data ?? []).map((company) => (
               <li
                 key={company.id}
-                className="flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-4"
+                className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center"
               >
+                <div className="flex min-w-0 flex-1 items-start gap-4">
                 {company.logoUrl ? (
                   <img
                     src={company.logoUrl}
@@ -154,7 +158,7 @@ function MasterPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{company.name}</p>
                   <p className="truncate text-xs text-muted-foreground">/{company.slug}</p>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span
                       className="h-5 w-5 rounded-full border border-border"
                       style={{ background: company.primaryColor }}
@@ -165,7 +169,7 @@ function MasterPage() {
                       style={{ background: company.secondaryColor }}
                       title={`Cor secundária ${company.secondaryColor}`}
                     />
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs break-words text-muted-foreground">
                       {company.admins.length} admin(s)
                       {company.admins.length > 0
                         ? `: ${company.admins.map((admin) => admin.email).join(", ")}`
@@ -174,8 +178,10 @@ function MasterPage() {
                   </div>
                 </div>
 
+                </div>
+
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="flex items-center gap-2 text-sm">
+                  <label className="flex min-h-11 items-center gap-2 text-sm">
                     <Switch
                       checked={company.isActive}
                       onCheckedChange={(checked) =>
@@ -320,7 +326,7 @@ function CompanyDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="company-primary">Cor primária</Label>
               <Input

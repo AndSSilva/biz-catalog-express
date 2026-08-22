@@ -62,8 +62,8 @@ export function AdminShell({ title, children }: { title: string; children: React
 
   return (
     <div className="min-h-screen bg-background" style={brandingStyle(company)}>
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 sm:flex sm:justify-between">
+      <header className="sticky top-0 z-30 border-b border-border bg-card">
+        <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:flex sm:justify-between sm:px-5 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
             {company.logoUrl ? (
               <img
@@ -73,40 +73,71 @@ export function AdminShell({ title, children }: { title: string; children: React
               />
             ) : null}
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-extrabold">{title}</h1>
+              <h1 className="truncate text-lg font-extrabold sm:text-xl">{title}</h1>
               <p className="truncate text-xs text-muted-foreground">{company.name}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <Button asChild variant="ghost" className="h-11 rounded-full">
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 rounded-full sm:hidden"
+              aria-label="Ver catálogo"
+            >
+              <Link to="/$slug" params={{ slug: company.slug }} target="_blank">
+                <ExternalLink className="h-5 w-5" aria-hidden />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" className="hidden h-11 rounded-full sm:inline-flex">
               <Link to="/$slug" params={{ slug: company.slug }} target="_blank">
                 <ExternalLink className="mr-1 h-4 w-4" aria-hidden />
                 Ver catálogo
               </Link>
             </Button>
-            <Button variant="ghost" className="h-11 rounded-full" onClick={signOut}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 rounded-full sm:hidden"
+              aria-label="Sair"
+              onClick={signOut}
+            >
+              <LogOut className="h-5 w-5" aria-hidden />
+            </Button>
+            <Button
+              variant="ghost"
+              className="hidden h-11 rounded-full sm:inline-flex"
+              onClick={signOut}
+            >
               <LogOut className="mr-1 h-4 w-4" aria-hidden />
               Sair
             </Button>
           </div>
         </div>
-        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 pb-3">
-          {links.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              activeOptions={{ exact: link.to === "/admin" }}
-              activeProps={{ className: "bg-primary text-primary-foreground" }}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
-            >
-              <link.icon className="h-4 w-4" aria-hidden />
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="relative">
+          <nav className="no-scrollbar mx-auto flex max-w-5xl snap-x gap-1 overflow-x-auto px-4 pb-3 sm:px-3">
+            {links.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                activeOptions={{ exact: link.to === "/admin" }}
+                activeProps={{ className: "bg-primary text-primary-foreground" }}
+                className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
+              >
+                <link.icon className="h-4 w-4" aria-hidden />
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-card to-transparent sm:hidden"
+          />
+        </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-6">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-5 sm:px-5 sm:py-6">{children}</main>
+
     </div>
   );
 }

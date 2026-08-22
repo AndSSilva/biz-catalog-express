@@ -27,6 +27,9 @@ export function ProductCard({ product, quantity, onAdd, onIncrement, onDecrement
             alt={product.title}
             loading="lazy"
             decoding="async"
+            width={800}
+            height={600}
+            sizes="(min-width: 1280px) 300px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
         ) : (
@@ -42,7 +45,7 @@ export function ProductCard({ product, quantity, onAdd, onIncrement, onDecrement
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-1.5 p-4">
         <h2 className="text-base leading-snug font-semibold text-foreground sm:text-lg">
           {product.title}
         </h2>

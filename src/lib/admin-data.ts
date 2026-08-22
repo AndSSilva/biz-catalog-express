@@ -325,6 +325,7 @@ export function useSaveProduct() {
       sort_order: number;
       category_id: string;
     }) => {
+      const company = companyId();
       if (input.id) {
         const { error } = await supabase
           .from("products")
@@ -336,7 +337,8 @@ export function useSaveProduct() {
             sort_order: input.sort_order,
             category_id: input.category_id,
           })
-          .eq("id", input.id);
+          .eq("id", input.id)
+          .eq("company_id", company);
         if (error) throw error;
         return input.id;
       }
@@ -350,7 +352,7 @@ export function useSaveProduct() {
           is_active: input.is_active,
           sort_order: input.sort_order,
           category_id: input.category_id,
-          company_id: companyId(),
+          company_id: company,
         })
         .select("id")
         .single();
@@ -363,9 +365,14 @@ export function useSaveProduct() {
 
 export function useDeleteProduct() {
   const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("products").delete().eq("id", id);
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", companyId());
       if (error) throw error;
     },
     onSuccess: invalidate,
@@ -374,12 +381,14 @@ export function useDeleteProduct() {
 
 export function useToggleActive() {
   const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
         .from("products")
         .update({ is_active: isActive })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("company_id", companyId());
       if (error) throw error;
     },
     onSuccess: invalidate,
@@ -388,15 +397,20 @@ export function useToggleActive() {
 
 export function useReorderProducts() {
   const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (ordered: { id: string; sort_order: number }[]) => {
+      const company = companyId();
       for (const row of ordered) {
         const { error } = await supabase
           .from("products")
           .update({ sort_order: row.sort_order })
-          .eq("id", row.id);
+          .eq("id", row.id)
+          .eq("company_id", company);
         if (error) throw error;
       }
+    },
+
     },
     onSuccess: invalidate,
   });

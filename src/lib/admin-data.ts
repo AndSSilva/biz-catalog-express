@@ -301,20 +301,6 @@ export function useMoveCategoryProducts() {
 }
 
 
-/** Move todos os produtos de uma categoria para outra. */
-export function useMoveCategoryProducts() {
-  const invalidate = useInvalidateCategories();
-  return useMutation({
-    mutationFn: async ({ fromId, toId }: { fromId: string; toId: string }) => {
-      const { error } = await supabase
-        .from("products")
-        .update({ category_id: toId })
-        .eq("category_id", fromId);
-      if (error) throw error;
-    },
-    onSuccess: invalidate,
-  });
-}
 
 export function useInvalidateCatalog() {
   const queryClient = useQueryClient();

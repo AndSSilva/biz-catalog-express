@@ -446,28 +446,43 @@ export type DashboardData = {
 };
 
 export function useDashboard() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-dashboard"],
+    queryKey: ["admin-dashboard", companyId],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<DashboardData> => {
-      const [orders, items, activeCount] = await Promise.all([
+      const company = companyId!;
+      const [orders, activeCount] = await Promise.all([
         supabase
           .from("orders")
           .select("id, created_at, total_items")
+          .eq("company_id", company)
           .order("created_at", { ascending: false })
           .limit(500),
-        supabase.from("order_items").select("product_title, quantity").limit(5000),
         supabase
           .from("products")
           .select("id", { count: "exact", head: true })
+          .eq("company_id", company)
           .eq("is_active", true),
       ]);
 
       if (orders.error) throw orders.error;
-      if (items.error) throw items.error;
+
+      const orderIds = (orders.data ?? []).map((row) => row.id);
+      let itemRows: { product_title: string; quantity: number }[] = [];
+      if (orderIds.length > 0) {
+        const items = await supabase
+          .from("order_items")
+          .select("product_title, quantity")
+          .in("order_id", orderIds)
+          .limit(5000);
+        if (items.error) throw items.error;
+        itemRows = items.data ?? [];
+      }
 
       const totals = new Map<string, number>();
       let totalItems = 0;
-      for (const row of items.data ?? []) {
+      for (const row of itemRows) {
         totals.set(row.product_title, (totals.get(row.product_title) ?? 0) + row.quantity);
         totalItems += row.quantity;
       }
@@ -487,15 +502,21 @@ export function useDashboard() {
 }
 
 export function useSettings() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-settings"],
+    queryKey: ["admin-settings", companyId],
+    enabled: Boolean(companyId),
     queryFn: async () => {
-      const { data, error } = await supabase.from("settings").select("key, value");
+      const { data, error } = await supabase
+        .from("settings")
+        .select("key, value")
+        .eq("company_id", companyId!);
       if (error) throw error;
       return new Map((data ?? []).map((row) => [row.key, row.value]));
     },
   });
 }
+
 
 export function useSaveSettings() {
   const queryClient = useQueryClient();

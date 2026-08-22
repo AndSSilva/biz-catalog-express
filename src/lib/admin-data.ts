@@ -113,15 +113,27 @@ function useCompanyId() {
   };
 }
 
+/**
+ * Empresa do administrador logado. Toda consulta do /admin passa por aqui:
+ * sem vínculo empresa↔admin a query nem roda (nunca cai para "sem filtro").
+ */
+function useCompanyScope() {
+  const { data: company, isPending } = useMyCompany();
+  return { companyId: company?.id ?? null, isPending };
+}
+
 export function useAdminProducts() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-products"],
+    queryKey: ["admin-products", companyId],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<AdminProduct[]> => {
       const { data, error } = await supabase
         .from("products")
         .select(
           "id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)",
         )
+        .eq("company_id", companyId!)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -131,8 +143,10 @@ export function useAdminProducts() {
 }
 
 export function useAdminProduct(id: string) {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-product", id],
+    queryKey: ["admin-product", companyId, id],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<AdminProduct> => {
       const { data, error } = await supabase
         .from("products")
@@ -140,6 +154,7 @@ export function useAdminProduct(id: string) {
           "id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)",
         )
         .eq("id", id)
+        .eq("company_id", companyId!)
         .single();
       if (error) throw error;
       return data;
@@ -148,12 +163,15 @@ export function useAdminProduct(id: string) {
 }
 
 export function useCategories() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-categories"],
+    queryKey: ["admin-categories", companyId],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<Category[]> => {
       const { data, error } = await supabase
         .from("categories")
         .select("id, name, slug, sort_order")
+        .eq("company_id", companyId!)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true });
       if (error) throw error;
@@ -162,12 +180,17 @@ export function useCategories() {
   });
 }
 
-/** Quantidade de produtos vinculados a cada categoria. */
+/** Quantidade de produtos vinculados a cada categoria (somente da própria empresa). */
 export function useCategoryProductCounts() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-category-counts"],
+    queryKey: ["admin-category-counts", companyId],
+    enabled: Boolean(companyId),
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("category_id");
+      const { data, error } = await supabase
+        .from("products")
+        .select("category_id")
+        .eq("company_id", companyId!);
       if (error) throw error;
       const counts = new Map<string, number>();
       for (const row of data ?? []) {
@@ -178,6 +201,7 @@ export function useCategoryProductCounts() {
     },
   });
 }
+
 
 export function slugifyCategory(name: string) {
   return name
@@ -204,19 +228,24 @@ export function useSaveCategory() {
   const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (input: { id?: string | undefined; name: string; sort_order: number }) => {
+      const id = companyId();
       const payload = {
         name: input.name,
         slug: slugifyCategory(input.name) || crypto.randomUUID().slice(0, 8),
         sort_order: input.sort_order,
       };
       if (input.id) {
-        const { error } = await supabase.from("categories").update(payload).eq("id", input.id);
+        const { error } = await supabase
+          .from("categories")
+          .update(payload)
+          .eq("id", input.id)
+          .eq("company_id", id);
         if (error) throw error;
         return input.id;
       }
       const { data, error } = await supabase
         .from("categories")
-        .insert({ ...payload, company_id: companyId() })
+        .insert({ ...payload, company_id: id })
         .select("id")
         .single();
       if (error) throw error;
@@ -228,39 +257,50 @@ export function useSaveCategory() {
 
 export function useDeleteCategory() {
   const invalidate = useInvalidateCategories();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (id: string) => {
+      const company = companyId();
       const { count, error: countError } = await supabase
         .from("products")
         .select("id", { count: "exact", head: true })
-        .eq("category_id", id);
+        .eq("category_id", id)
+        .eq("company_id", company);
       if (countError) throw countError;
       if ((count ?? 0) > 0) {
         throw new Error(
           "Esta categoria possui produtos vinculados. Mova os produtos para outra categoria antes de excluir.",
         );
       }
-      const { error } = await supabase.from("categories").delete().eq("id", id);
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", company);
       if (error) throw error;
     },
     onSuccess: invalidate,
   });
 }
 
-/** Move todos os produtos de uma categoria para outra. */
+/** Move todos os produtos de uma categoria para outra (dentro da própria empresa). */
 export function useMoveCategoryProducts() {
   const invalidate = useInvalidateCategories();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async ({ fromId, toId }: { fromId: string; toId: string }) => {
       const { error } = await supabase
         .from("products")
         .update({ category_id: toId })
-        .eq("category_id", fromId);
+        .eq("category_id", fromId)
+        .eq("company_id", companyId());
       if (error) throw error;
     },
     onSuccess: invalidate,
   });
 }
+
+
 
 export function useInvalidateCatalog() {
   const queryClient = useQueryClient();
@@ -285,6 +325,7 @@ export function useSaveProduct() {
       sort_order: number;
       category_id: string;
     }) => {
+      const company = companyId();
       if (input.id) {
         const { error } = await supabase
           .from("products")
@@ -296,7 +337,8 @@ export function useSaveProduct() {
             sort_order: input.sort_order,
             category_id: input.category_id,
           })
-          .eq("id", input.id);
+          .eq("id", input.id)
+          .eq("company_id", company);
         if (error) throw error;
         return input.id;
       }
@@ -310,7 +352,7 @@ export function useSaveProduct() {
           is_active: input.is_active,
           sort_order: input.sort_order,
           category_id: input.category_id,
-          company_id: companyId(),
+          company_id: company,
         })
         .select("id")
         .single();
@@ -323,9 +365,14 @@ export function useSaveProduct() {
 
 export function useDeleteProduct() {
   const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("products").delete().eq("id", id);
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", companyId());
       if (error) throw error;
     },
     onSuccess: invalidate,
@@ -334,12 +381,14 @@ export function useDeleteProduct() {
 
 export function useToggleActive() {
   const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
         .from("products")
         .update({ is_active: isActive })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("company_id", companyId());
       if (error) throw error;
     },
     onSuccess: invalidate,
@@ -348,16 +397,20 @@ export function useToggleActive() {
 
 export function useReorderProducts() {
   const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
   return useMutation({
     mutationFn: async (ordered: { id: string; sort_order: number }[]) => {
+      const company = companyId();
       for (const row of ordered) {
         const { error } = await supabase
           .from("products")
           .update({ sort_order: row.sort_order })
-          .eq("id", row.id);
+          .eq("id", row.id)
+          .eq("company_id", company);
         if (error) throw error;
       }
     },
+
     onSuccess: invalidate,
   });
 }
@@ -392,28 +445,43 @@ export type DashboardData = {
 };
 
 export function useDashboard() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-dashboard"],
+    queryKey: ["admin-dashboard", companyId],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<DashboardData> => {
-      const [orders, items, activeCount] = await Promise.all([
+      const company = companyId!;
+      const [orders, activeCount] = await Promise.all([
         supabase
           .from("orders")
           .select("id, created_at, total_items")
+          .eq("company_id", company)
           .order("created_at", { ascending: false })
           .limit(500),
-        supabase.from("order_items").select("product_title, quantity").limit(5000),
         supabase
           .from("products")
           .select("id", { count: "exact", head: true })
+          .eq("company_id", company)
           .eq("is_active", true),
       ]);
 
       if (orders.error) throw orders.error;
-      if (items.error) throw items.error;
+
+      const orderIds = (orders.data ?? []).map((row) => row.id);
+      let itemRows: { product_title: string; quantity: number }[] = [];
+      if (orderIds.length > 0) {
+        const items = await supabase
+          .from("order_items")
+          .select("product_title, quantity")
+          .in("order_id", orderIds)
+          .limit(5000);
+        if (items.error) throw items.error;
+        itemRows = items.data ?? [];
+      }
 
       const totals = new Map<string, number>();
       let totalItems = 0;
-      for (const row of items.data ?? []) {
+      for (const row of itemRows) {
         totals.set(row.product_title, (totals.get(row.product_title) ?? 0) + row.quantity);
         totalItems += row.quantity;
       }
@@ -433,15 +501,21 @@ export function useDashboard() {
 }
 
 export function useSettings() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-settings"],
+    queryKey: ["admin-settings", companyId],
+    enabled: Boolean(companyId),
     queryFn: async () => {
-      const { data, error } = await supabase.from("settings").select("key, value");
+      const { data, error } = await supabase
+        .from("settings")
+        .select("key, value")
+        .eq("company_id", companyId!);
       if (error) throw error;
       return new Map((data ?? []).map((row) => [row.key, row.value]));
     },
   });
 }
+
 
 export function useSaveSettings() {
   const queryClient = useQueryClient();

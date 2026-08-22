@@ -411,7 +411,6 @@ export function useReorderProducts() {
       }
     },
 
-    },
     onSuccess: invalidate,
   });
 }

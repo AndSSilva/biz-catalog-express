@@ -37,7 +37,7 @@ function DashboardPage() {
 
       {data && (
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat label="Pedidos iniciados" value={data.totalOrders} />
             <Stat label="Itens selecionados" value={data.totalItems} />
             <Stat label="Produtos ativos" value={data.activeProducts} />

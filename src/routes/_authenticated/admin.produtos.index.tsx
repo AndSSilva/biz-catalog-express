@@ -63,7 +63,7 @@ function ProductsPage() {
   return (
     <AdminShell title="Produtos">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
+        <p className="min-w-0 flex-1 text-sm text-muted-foreground">
           A ordem abaixo é a mesma exibida no catálogo público.
         </p>
         <Button asChild className="h-11 shrink-0 rounded-full">
@@ -90,8 +90,9 @@ function ProductsPage() {
         {(data ?? []).map((product, index) => (
           <li
             key={product.id}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3"
+            className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center"
           >
+            <div className="flex min-w-0 flex-1 items-start gap-3">
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
               {product.image_url ? (
                 <img
@@ -104,7 +105,7 @@ function ProductsPage() {
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{product.title}</p>
+              <p className="text-sm font-semibold sm:truncate">{product.title}</p>
               <p className="mt-0.5 truncate text-xs font-medium text-primary">
                 {product.categories?.name ?? "Sem categoria"}
               </p>
@@ -131,7 +132,9 @@ function ProductsPage() {
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-col gap-1">
+            </div>
+
+            <div className="flex shrink-0 items-center justify-end gap-1 sm:flex-col sm:items-stretch">
               <div className="flex gap-1">
                 <Button
                   variant="outline"

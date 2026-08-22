@@ -20,7 +20,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold">{value}</p>
+      <p className="mt-1 line-clamp-2 text-xl font-extrabold break-words sm:text-2xl">{value}</p>
     </div>
   );
 }
@@ -37,7 +37,7 @@ function DashboardPage() {
 
       {data && (
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Pedidos iniciados" value={data.totalOrders} />
             <Stat label="Itens selecionados" value={data.totalItems} />
             <Stat label="Produtos ativos" value={data.activeProducts} />

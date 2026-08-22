@@ -113,15 +113,27 @@ function useCompanyId() {
   };
 }
 
+/**
+ * Empresa do administrador logado. Toda consulta do /admin passa por aqui:
+ * sem vínculo empresa↔admin a query nem roda (nunca cai para "sem filtro").
+ */
+function useCompanyScope() {
+  const { data: company, isPending } = useMyCompany();
+  return { companyId: company?.id ?? null, isPending };
+}
+
 export function useAdminProducts() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-products"],
+    queryKey: ["admin-products", companyId],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<AdminProduct[]> => {
       const { data, error } = await supabase
         .from("products")
         .select(
           "id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)",
         )
+        .eq("company_id", companyId!)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -131,8 +143,10 @@ export function useAdminProducts() {
 }
 
 export function useAdminProduct(id: string) {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-product", id],
+    queryKey: ["admin-product", companyId, id],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<AdminProduct> => {
       const { data, error } = await supabase
         .from("products")
@@ -140,6 +154,7 @@ export function useAdminProduct(id: string) {
           "id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)",
         )
         .eq("id", id)
+        .eq("company_id", companyId!)
         .single();
       if (error) throw error;
       return data;
@@ -148,12 +163,15 @@ export function useAdminProduct(id: string) {
 }
 
 export function useCategories() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-categories"],
+    queryKey: ["admin-categories", companyId],
+    enabled: Boolean(companyId),
     queryFn: async (): Promise<Category[]> => {
       const { data, error } = await supabase
         .from("categories")
         .select("id, name, slug, sort_order")
+        .eq("company_id", companyId!)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true });
       if (error) throw error;
@@ -162,12 +180,17 @@ export function useCategories() {
   });
 }
 
-/** Quantidade de produtos vinculados a cada categoria. */
+/** Quantidade de produtos vinculados a cada categoria (somente da própria empresa). */
 export function useCategoryProductCounts() {
+  const { companyId } = useCompanyScope();
   return useQuery({
-    queryKey: ["admin-category-counts"],
+    queryKey: ["admin-category-counts", companyId],
+    enabled: Boolean(companyId),
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("category_id");
+      const { data, error } = await supabase
+        .from("products")
+        .select("category_id")
+        .eq("company_id", companyId!);
       if (error) throw error;
       const counts = new Map<string, number>();
       for (const row of data ?? []) {
@@ -178,6 +201,7 @@ export function useCategoryProductCounts() {
     },
   });
 }
+
 
 export function slugifyCategory(name: string) {
   return name

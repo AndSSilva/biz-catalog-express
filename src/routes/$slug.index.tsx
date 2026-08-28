@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { brandingStyle } from "@/lib/branding";
 import { addToCart, setQuantity, totalItems, useCart } from "@/lib/cart";
 import { catalogQueryOptions } from "@/lib/catalog-queries";
-import type { CatalogProduct } from "@/lib/catalog.functions";
+import type { CatalogProduct, ProductAvailability } from "@/lib/catalog.functions";
+import { AVAILABILITY_LABEL } from "@/lib/price";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ context, params }) =>
@@ -19,8 +20,7 @@ export const Route = createFileRoute("/$slug/")({
   head: ({ loaderData }) => {
     const name = loaderData?.settings.storeName ?? "Catálogo";
     const tagline =
-      loaderData?.settings.storeTagline ??
-      "Escolha os produtos e finalize o pedido pelo WhatsApp.";
+      loaderData?.settings.storeTagline ?? "Escolha os produtos e finalize o pedido pelo WhatsApp.";
     const title = `${name} — pedido rápido pelo WhatsApp`;
     return {
       meta: [
@@ -69,16 +69,22 @@ function CatalogPage() {
   const cart = useCart(slug);
   const count = totalItems(cart);
   const [categoryId, setCategoryId] = useState<string>("all");
+  const [onSaleOnly, setOnSaleOnly] = useState(false);
+  const [availability, setAvailability] = useState<ProductAvailability | "all">("all");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
 
   const categories = data.categories ?? [];
   const visibleProducts = useMemo(
     () =>
-      categoryId === "all"
-        ? data.products
-        : data.products.filter((product) => product.category_id === categoryId),
-    [data.products, categoryId],
+      data.products.filter((product) => {
+        if (categoryId !== "all" && product.category_id !== categoryId) return false;
+        if (onSaleOnly && !product.on_sale) return false;
+        if (availability !== "all" && product.availability !== availability) return false;
+        return true;
+      }),
+    [data.products, categoryId, onSaleOnly, availability],
   );
+  const filtersActive = categoryId !== "all" || onSaleOnly || availability !== "all";
 
   const quantityOf = (id: string) => cart.find((item) => item.id === id)?.quantity ?? 0;
 
@@ -100,7 +106,10 @@ function CatalogPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-[calc(6.5rem+env(safe-area-inset-bottom))]" style={brandingStyle(data.company)}>
+    <div
+      className="min-h-screen bg-background pb-[calc(6.5rem+env(safe-area-inset-bottom))]"
+      style={brandingStyle(data.company)}
+    >
       <header className="border-b border-border bg-card/70">
         <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:flex sm:px-5 sm:py-5 sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
@@ -147,44 +156,79 @@ function CatalogPage() {
               Categoria
             </p>
             <div className="relative">
-            <div
-              role="group"
-              aria-label="Filtrar por categoria"
-              className="no-scrollbar -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
-            >
-              {[{ id: "all", name: "Todas" }, ...categories].map((category) => {
-                const active = categoryId === category.id;
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setCategoryId(category.id)}
-                    className={`min-h-11 shrink-0 snap-start rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${
-                      active
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    {category.name}
-                  </button>
-                );
-              })}
-            </div>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden"
-            />
+              <div
+                role="group"
+                aria-label="Filtrar por categoria"
+                className="no-scrollbar -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+              >
+                {[{ id: "all", name: "Todas" }, ...categories].map((category) => {
+                  const active = categoryId === category.id;
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setCategoryId(category.id)}
+                      className={`min-h-11 shrink-0 snap-start rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {category.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden"
+              />
             </div>
           </div>
         )}
+
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={onSaleOnly}
+            onClick={() => setOnSaleOnly((value) => !value)}
+            className={`min-h-11 shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${
+              onSaleOnly
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-foreground hover:bg-accent"
+            }`}
+          >
+            Em promoção
+          </button>
+          {(["all", "pronta_entrega", "sob_encomenda"] as const).map((value) => {
+            const active = availability === value;
+            const label = value === "all" ? "Qualquer disponibilidade" : AVAILABILITY_LABEL[value];
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setAvailability(value)}
+                className={`min-h-11 shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-foreground hover:bg-accent"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
         {visibleProducts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
             <h2 className="text-lg font-semibold">Nenhum produto disponível</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {categoryId === "all"
-                ? "Volte em breve: o catálogo está sendo atualizado."
-                : "Nenhum produto nesta categoria. Escolha \u201cTodas\u201d para ver tudo."}
+              {filtersActive
+                ? "Nenhum produto encontrado com esses filtros. Tente ajustar a categoria, a promoção ou a disponibilidade."
+                : "Volte em breve: o catálogo está sendo atualizado."}
             </p>
           </div>
         ) : (

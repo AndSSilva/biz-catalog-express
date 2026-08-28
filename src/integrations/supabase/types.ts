@@ -190,6 +190,7 @@ export type Database = {
       }
       products: {
         Row: {
+          availability: Database["public"]["Enums"]["product_availability"]
           category_id: string | null
           company_id: string
           created_at: string
@@ -197,11 +198,14 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          on_sale: boolean
+          price: number | null
           sort_order: number
           title: string
           updated_at: string
         }
         Insert: {
+          availability?: Database["public"]["Enums"]["product_availability"]
           category_id?: string | null
           company_id: string
           created_at?: string
@@ -209,11 +213,14 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          on_sale?: boolean
+          price?: number | null
           sort_order?: number
           title: string
           updated_at?: string
         }
         Update: {
+          availability?: Database["public"]["Enums"]["product_availability"]
           category_id?: string | null
           company_id?: string
           created_at?: string
@@ -221,6 +228,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          on_sale?: boolean
+          price?: number | null
           sort_order?: number
           title?: string
           updated_at?: string
@@ -308,6 +317,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "master"
+      product_availability: "pronta_entrega" | "sob_encomenda"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -436,6 +446,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "master"],
+      product_availability: ["pronta_entrega", "sob_encomenda"],
     },
   },
 } as const

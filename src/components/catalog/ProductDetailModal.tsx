@@ -1,4 +1,4 @@
-import { Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Tag, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import type { CatalogProduct } from "@/lib/catalog.functions";
+import { AVAILABILITY_LABEL, formatPrice } from "@/lib/price";
 
 type Props = {
   product: CatalogProduct | null;
@@ -57,19 +58,30 @@ export function ProductDetailModal({
             >
               <X className="h-5 w-5" aria-hidden />
             </button>
+            {product.on_sale && (
+              <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-destructive px-3 py-1 text-xs font-semibold text-destructive-foreground shadow-sm">
+                <Tag className="h-3.5 w-3.5" aria-hidden />
+                Promoção
+              </span>
+            )}
           </div>
 
           <div className="p-5 sm:p-6">
             <DialogHeader className="text-left">
-              <DialogTitle className="text-xl font-bold sm:text-2xl">
-                {product.title}
-              </DialogTitle>
+              <DialogTitle className="text-xl font-bold sm:text-2xl">{product.title}</DialogTitle>
               {product.description && (
-                <DialogDescription className="sr-only">
-                  {product.description}
-                </DialogDescription>
+                <DialogDescription className="sr-only">{product.description}</DialogDescription>
               )}
             </DialogHeader>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-lg font-bold text-foreground">
+                {formatPrice(product.price) ?? "Sob consulta"}
+              </span>
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                {AVAILABILITY_LABEL[product.availability]}
+              </span>
+            </div>
 
             <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground sm:text-base">
               {product.description || "Sem descrição."}

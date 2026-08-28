@@ -23,7 +23,9 @@ import {
   useMyCompany,
   useSaveProduct,
   type AdminProduct,
+  type ProductAvailability,
 } from "@/lib/admin-data";
+import { AVAILABILITY_LABEL } from "@/lib/price";
 
 export function ProductForm({ product }: { product?: AdminProduct }) {
   const navigate = useNavigate();
@@ -38,6 +40,11 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
   const [sortOrder, setSortOrder] = useState(product?.sort_order ?? 999);
   const [categoryId, setCategoryId] = useState(product?.category_id ?? "");
+  const [price, setPrice] = useState(product?.price != null ? String(product.price) : "");
+  const [onSale, setOnSale] = useState(product?.on_sale ?? false);
+  const [availability, setAvailability] = useState<ProductAvailability>(
+    product?.availability ?? "pronta_entrega",
+  );
   const [brief, setBrief] = useState("");
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -88,6 +95,12 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
       toast.error("Selecione uma categoria");
       return;
     }
+    const normalizedPrice = price.trim().replace(",", ".");
+    const parsedPrice = normalizedPrice === "" ? null : Number(normalizedPrice);
+    if (parsedPrice !== null && (!Number.isFinite(parsedPrice) || parsedPrice < 0)) {
+      toast.error("Informe um valor válido, ou deixe em branco");
+      return;
+    }
     try {
       await save.mutateAsync({
         id: product?.id,
@@ -97,6 +110,9 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         is_active: isActive,
         category_id: categoryId,
         sort_order: Number.isFinite(sortOrder) ? sortOrder : 999,
+        price: parsedPrice,
+        on_sale: onSale,
+        availability,
       });
       toast.success(product ? "Produto atualizado" : "Produto criado");
       void navigate({ to: "/admin/produtos" });
@@ -196,10 +212,63 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
               }}
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              {uploading ? "Enviando foto..." : "Tire uma foto ou escolha da galeria. JPG ou PNG, proporção quadrada fica melhor."}
+              {uploading
+                ? "Enviando foto..."
+                : "Tire uma foto ou escolha da galeria. JPG ou PNG, proporção quadrada fica melhor."}
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-end">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <Label htmlFor="price">Valor (opcional)</Label>
+          <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-sm text-muted-foreground">
+              R$
+            </span>
+            <Input
+              id="price"
+              inputMode="decimal"
+              placeholder="0,00"
+              className="h-12 pl-10"
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Deixe em branco para mostrar “sob consulta”. O WhatsApp não inclui o valor.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:w-48 sm:shrink-0">
+          <Label htmlFor="availability">Disponibilidade</Label>
+          <Select
+            value={availability}
+            onValueChange={(value) => setAvailability(value as ProductAvailability)}
+          >
+            <SelectTrigger id="availability" className="h-12">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(AVAILABILITY_LABEL).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">Em promoção</p>
+          <p className="text-xs text-muted-foreground">
+            Destaca o produto com um selo de promoção no catálogo.
+          </p>
+        </div>
+        <Switch checked={onSale} onCheckedChange={setOnSale} />
       </div>
 
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4">

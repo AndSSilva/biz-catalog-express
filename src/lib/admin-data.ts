@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 
+export type ProductAvailability = "pronta_entrega" | "sob_encomenda";
+
 export type AdminProduct = {
   id: string;
   title: string;
@@ -10,6 +12,9 @@ export type AdminProduct = {
   is_active: boolean;
   sort_order: number;
   category_id: string | null;
+  price: number | null;
+  on_sale: boolean;
+  availability: ProductAvailability;
   categories?: { id: string; name: string } | null;
 };
 
@@ -131,7 +136,7 @@ export function useAdminProducts() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)",
+          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, categories(id, name)",
         )
         .eq("company_id", companyId!)
         .order("sort_order", { ascending: true })
@@ -151,7 +156,7 @@ export function useAdminProduct(id: string) {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, title, description, image_url, is_active, sort_order, category_id, categories(id, name)",
+          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, categories(id, name)",
         )
         .eq("id", id)
         .eq("company_id", companyId!)
@@ -201,7 +206,6 @@ export function useCategoryProductCounts() {
     },
   });
 }
-
 
 export function slugifyCategory(name: string) {
   return name
@@ -300,8 +304,6 @@ export function useMoveCategoryProducts() {
   });
 }
 
-
-
 export function useInvalidateCatalog() {
   const queryClient = useQueryClient();
   return () => {
@@ -324,6 +326,9 @@ export function useSaveProduct() {
       is_active: boolean;
       sort_order: number;
       category_id: string;
+      price: number | null;
+      on_sale: boolean;
+      availability: ProductAvailability;
     }) => {
       const company = companyId();
       if (input.id) {
@@ -336,6 +341,9 @@ export function useSaveProduct() {
             is_active: input.is_active,
             sort_order: input.sort_order,
             category_id: input.category_id,
+            price: input.price,
+            on_sale: input.on_sale,
+            availability: input.availability,
           })
           .eq("id", input.id)
           .eq("company_id", company);
@@ -352,6 +360,9 @@ export function useSaveProduct() {
           is_active: input.is_active,
           sort_order: input.sort_order,
           category_id: input.category_id,
+          price: input.price,
+          on_sale: input.on_sale,
+          availability: input.availability,
           company_id: company,
         })
         .select("id")
@@ -515,7 +526,6 @@ export function useSettings() {
     },
   });
 }
-
 
 export function useSaveSettings() {
   const queryClient = useQueryClient();

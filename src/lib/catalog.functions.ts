@@ -4,12 +4,17 @@ import { z } from "zod";
 
 import { createPublicClient } from "./supabase-public.server";
 
+export type ProductAvailability = "pronta_entrega" | "sob_encomenda";
+
 export type CatalogProduct = {
   id: string;
   title: string;
   description: string;
   image_url: string | null;
   category_id: string | null;
+  price: number | null;
+  on_sale: boolean;
+  availability: ProductAvailability;
 };
 
 export type CatalogCategory = {
@@ -64,7 +69,7 @@ export const getCatalog = createServerFn({ method: "GET" })
     const [productsResult, settingsResult, categoriesResult] = await Promise.all([
       supabase
         .from("products")
-        .select("id, title, description, image_url, category_id")
+        .select("id, title, description, image_url, category_id, price, on_sale, availability")
         .eq("company_id", company.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true })

@@ -23,6 +23,7 @@ import {
   useToggleActive,
   type AdminProduct,
 } from "@/lib/admin-data";
+import { AVAILABILITY_LABEL, formatPrice } from "@/lib/price";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos/")({
   head: () => ({
@@ -93,45 +94,58 @@ function ProductsPage() {
             className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center"
           >
             <div className="flex min-w-0 flex-1 items-start gap-3">
-            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
-              {product.image_url ? (
-                <img
-                  src={product.image_url}
-                  alt={product.title}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold sm:truncate">{product.title}</p>
-              <p className="mt-0.5 truncate text-xs font-medium text-primary">
-                {product.categories?.name ?? "Sem categoria"}
-              </p>
-              <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                {product.description}
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <Switch
-                  id={`active-${product.id}`}
-                  checked={product.is_active}
-                  onCheckedChange={(checked) =>
-                    toggle.mutate(
-                      { id: product.id, isActive: checked },
-                      {
-                        onError: () => toast.error("Não foi possível alterar o status"),
-                        onSuccess: () => toast.success(checked ? "Produto ativo" : "Produto inativo"),
-                      },
-                    )
-                  }
-                />
-                <label htmlFor={`active-${product.id}`} className="text-xs text-muted-foreground">
-                  {product.is_active ? "Ativo" : "Inativo"}
-                </label>
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+                {product.image_url ? (
+                  <img
+                    src={product.image_url}
+                    alt={product.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                ) : null}
               </div>
-            </div>
 
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold sm:truncate">{product.title}</p>
+                <p className="mt-0.5 truncate text-xs font-medium text-primary">
+                  {product.categories?.name ?? "Sem categoria"}
+                </p>
+                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                  {product.description}
+                </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-semibold">
+                    {formatPrice(product.price) ?? "Sob consulta"}
+                  </span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[0.6875rem] font-medium text-muted-foreground">
+                    {AVAILABILITY_LABEL[product.availability]}
+                  </span>
+                  {product.on_sale && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[0.6875rem] font-semibold text-primary">
+                      Promoção
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <Switch
+                    id={`active-${product.id}`}
+                    checked={product.is_active}
+                    onCheckedChange={(checked) =>
+                      toggle.mutate(
+                        { id: product.id, isActive: checked },
+                        {
+                          onError: () => toast.error("Não foi possível alterar o status"),
+                          onSuccess: () =>
+                            toast.success(checked ? "Produto ativo" : "Produto inativo"),
+                        },
+                      )
+                    }
+                  />
+                  <label htmlFor={`active-${product.id}`} className="text-xs text-muted-foreground">
+                    {product.is_active ? "Ativo" : "Inativo"}
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="flex shrink-0 items-center justify-end gap-1 sm:flex-col sm:items-stretch">

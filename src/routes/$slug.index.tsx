@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ShoppingBag, ShoppingCart } from "lucide-react";
+import { ShoppingBag, ShoppingCart, Tag } from "lucide-react";
 import { toast } from "sonner";
 
 import { CartBar } from "@/components/catalog/CartBar";
@@ -167,7 +167,10 @@ function CatalogPage() {
 
           <ChipRow label="Filtrar por promoção e disponibilidade" className="mt-2">
             <Chip active={onSaleOnly} onClick={() => setOnSaleOnly((value) => !value)}>
-              🔥 Promoção
+              <span className="inline-flex items-center gap-1">
+                <Tag className="h-3.5 w-3.5" aria-hidden />
+                Promoção
+              </span>
             </Chip>
             {(["all", "pronta_entrega", "sob_encomenda"] as const).map((value) => (
               <Chip

@@ -48,6 +48,8 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const [brief, setBrief] = useState("");
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   async function handleUpload(file: File) {
     if (!company) {

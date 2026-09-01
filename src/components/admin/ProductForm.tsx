@@ -220,7 +220,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <Label htmlFor="price">Valor (opcional)</Label>
           <div className="relative">

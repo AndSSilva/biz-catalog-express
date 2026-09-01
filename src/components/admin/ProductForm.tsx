@@ -200,25 +200,63 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <Input
+            <input
+              ref={fileInputRef}
               id="photo"
               type="file"
               accept="image/*"
-              className="h-12 py-2.5 file:mr-3 file:h-full"
+              className="sr-only"
               disabled={uploading}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) void handleUpload(file);
+                event.target.value = "";
               }}
             />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              disabled={uploading}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void handleUpload(file);
+                event.target.value = "";
+              }}
+            />
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 flex-1 rounded-full"
+                disabled={uploading}
+                onClick={() => cameraInputRef.current?.click()}
+              >
+                <Camera className="mr-2 h-4 w-4" aria-hidden />
+                Tirar foto
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 flex-1 rounded-full"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" aria-hidden />
+                Enviar arquivo
+              </Button>
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {uploading
                 ? "Enviando foto..."
-                : "Tire uma foto ou escolha da galeria. JPG ou PNG, proporção quadrada fica melhor."}
+                : "Tire uma foto com a câmera ou envie um arquivo da galeria. JPG ou PNG, proporção quadrada fica melhor."}
             </p>
           </div>
         </div>
       </div>
+
 
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-2">

@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ImagePlus, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Camera, ImagePlus, Sparkles, Upload } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";

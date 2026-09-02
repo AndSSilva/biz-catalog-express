@@ -11,6 +11,7 @@ export type CatalogProduct = {
   title: string;
   description: string;
   image_url: string | null;
+  image_urls: string[];
   category_id: string | null;
   price: number | null;
   on_sale: boolean;
@@ -88,6 +89,25 @@ export const getCatalog = createServerFn({ method: "GET" })
       throw new Error("Não foi possível carregar o catálogo.");
     }
 
+    const productIds = (productsResult.data ?? []).map((product) => product.id);
+    const imagesByProduct = new Map<string, string[]>();
+    if (productIds.length > 0) {
+      const { data: imageRows, error: imagesError } = await supabase
+        .from("product_images")
+        .select("product_id, image_url, sort_order")
+        .in("product_id", productIds)
+        .order("sort_order", { ascending: true });
+      if (imagesError) {
+        console.error("getCatalog product_images", imagesError);
+      } else {
+        for (const row of imageRows ?? []) {
+          const list = imagesByProduct.get(row.product_id) ?? [];
+          list.push(row.image_url);
+          imagesByProduct.set(row.product_id, list);
+        }
+      }
+    }
+
     const map = new Map((settingsResult.data ?? []).map((row) => [row.key, row.value]));
     const settings: StoreSettings = {
       whatsappNumber: map.get("whatsapp_number") ?? DEFAULT_SETTINGS.whatsappNumber,
@@ -95,6 +115,15 @@ export const getCatalog = createServerFn({ method: "GET" })
       storeName: map.get("store_name") || company.name,
       storeTagline: map.get("store_tagline") || DEFAULT_SETTINGS.storeTagline,
     };
+
+    const products: CatalogProduct[] = (productsResult.data ?? []).map((product) => {
+      const imageUrls = imagesByProduct.get(product.id) ?? [];
+      return {
+        ...product,
+        // Segurança extra para produtos antigos cuja galeria não tenha sido migrada.
+        image_urls: imageUrls.length > 0 ? imageUrls : product.image_url ? [product.image_url] : [],
+      };
+    });
 
     return {
       company: {
@@ -105,7 +134,7 @@ export const getCatalog = createServerFn({ method: "GET" })
         primaryColor: company.primary_color,
         secondaryColor: company.secondary_color,
       } satisfies CatalogCompany,
-      products: (productsResult.data ?? []) as CatalogProduct[],
+      products,
       categories: (categoriesResult.data ?? []) as CatalogCategory[],
       settings,
     };

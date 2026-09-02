@@ -1,4 +1,4 @@
-import { Check, Minus, Plus, ShoppingBag, Tag } from "lucide-react";
+import { Check, Images, Minus, Plus, ShoppingBag, Tag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { CatalogProduct } from "@/lib/catalog.functions";
@@ -55,6 +55,12 @@ export function ProductCard({
           <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-destructive px-2.5 py-1 text-[0.6875rem] font-semibold text-destructive-foreground shadow-sm sm:right-3 sm:top-3 sm:text-xs">
             <Tag className="h-3.5 w-3.5" aria-hidden />
             Promoção
+          </span>
+        )}
+        {product.image_urls.length > 1 && (
+          <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[0.6875rem] font-semibold text-white sm:bottom-3 sm:right-3">
+            <Images className="h-3.5 w-3.5" aria-hidden />
+            {product.image_urls.length}
           </span>
         )}
       </div>

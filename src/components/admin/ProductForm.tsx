@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Camera, ImagePlus, Sparkles, Upload } from "lucide-react";
+import { Camera, ImagePlus, Sparkles, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -27,6 +27,8 @@ import {
 } from "@/lib/admin-data";
 import { AVAILABILITY_LABEL } from "@/lib/price";
 
+const MAX_IMAGES = 6;
+
 export function ProductForm({ product }: { product?: AdminProduct }) {
   const navigate = useNavigate();
   const save = useSaveProduct();
@@ -36,7 +38,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
 
   const [title, setTitle] = useState(product?.title ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
-  const [imageUrl, setImageUrl] = useState(product?.image_url ?? null);
+  const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
   const [sortOrder, setSortOrder] = useState(product?.sort_order ?? 999);
   const [categoryId, setCategoryId] = useState(product?.category_id ?? "");
@@ -56,16 +58,24 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
       toast.error("Sua conta não está vinculada a nenhuma empresa.");
       return;
     }
+    if (images.length >= MAX_IMAGES) {
+      toast.error(`Máximo de ${MAX_IMAGES} fotos por produto.`);
+      return;
+    }
     setUploading(true);
     try {
       const url = await uploadProductImage(file, company.id);
-      setImageUrl(url);
+      setImages((current) => [...current, url]);
       toast.success("Foto enviada");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Falha ao enviar a foto");
     } finally {
       setUploading(false);
     }
+  }
+
+  function handleRemoveImage(index: number) {
+    setImages((current) => current.filter((_, i) => i !== index));
   }
 
   async function handleGenerate() {
@@ -108,7 +118,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         id: product?.id,
         title: title.trim(),
         description: description.trim(),
-        image_url: imageUrl,
+        images,
         is_active: isActive,
         category_id: categoryId,
         sort_order: Number.isFinite(sortOrder) ? sortOrder : 999,
@@ -190,17 +200,41 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <Label htmlFor="photo">Foto</Label>
+        <Label htmlFor="photo">
+          Fotos {images.length > 0 && `(${images.length}/${MAX_IMAGES})`}
+        </Label>
+
+        {images.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {images.map((url, index) => (
+              <div key={url} className="relative h-24 w-24 shrink-0">
+                <img src={url} alt="" className="h-full w-full rounded-xl object-cover" />
+                {index === 0 && (
+                  <span className="absolute bottom-1 left-1 rounded-full bg-black/60 px-2 py-0.5 text-[0.625rem] font-semibold text-white">
+                    Capa
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index)}
+                  aria-label="Remover foto"
+                  className="absolute -right-2 -top-2 grid h-7 w-7 place-items-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
+                >
+                  <X className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-muted sm:h-20 sm:w-20">
-            {imageUrl ? (
-              <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
+          {images.length === 0 && (
+            <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-muted sm:h-20 sm:w-20">
               <div className="grid h-full w-full place-items-center text-muted-foreground">
                 <ImagePlus className="h-5 w-5" aria-hidden />
               </div>
-            )}
-          </div>
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <input
               ref={fileInputRef}
@@ -208,7 +242,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
               type="file"
               accept="image/*"
               className="sr-only"
-              disabled={uploading}
+              disabled={uploading || images.length >= MAX_IMAGES}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) void handleUpload(file);
@@ -221,7 +255,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
               accept="image/*"
               capture="environment"
               className="sr-only"
-              disabled={uploading}
+              disabled={uploading || images.length >= MAX_IMAGES}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) void handleUpload(file);
@@ -233,7 +267,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
                 type="button"
                 variant="outline"
                 className="h-11 flex-1 rounded-full"
-                disabled={uploading}
+                disabled={uploading || images.length >= MAX_IMAGES}
                 onClick={() => cameraInputRef.current?.click()}
               >
                 <Camera className="mr-2 h-4 w-4" aria-hidden />
@@ -243,7 +277,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
                 type="button"
                 variant="outline"
                 className="h-11 flex-1 rounded-full"
-                disabled={uploading}
+                disabled={uploading || images.length >= MAX_IMAGES}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="mr-2 h-4 w-4" aria-hidden />
@@ -253,12 +287,13 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
             <p className="mt-1 text-xs text-muted-foreground">
               {uploading
                 ? "Enviando foto..."
-                : "Tire uma foto com a câmera ou envie um arquivo da galeria. JPG ou PNG, proporção quadrada fica melhor."}
+                : images.length >= MAX_IMAGES
+                  ? `Limite de ${MAX_IMAGES} fotos atingido. Remova uma para adicionar outra.`
+                  : "Adicione quantas fotos quiser (até 6). A primeira é usada como capa nas listagens; o cliente vê todas no catálogo."}
             </p>
           </div>
         </div>
       </div>
-
 
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-2">

@@ -94,7 +94,7 @@ function ProductsPage() {
             className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center"
           >
             <div className="flex min-w-0 flex-1 items-start gap-3">
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
                 {product.image_url ? (
                   <img
                     src={product.image_url}
@@ -103,6 +103,11 @@ function ProductsPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : null}
+                {product.images.length > 1 && (
+                  <span className="absolute bottom-0.5 right-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[0.5625rem] font-semibold text-white">
+                    +{product.images.length - 1}
+                  </span>
+                )}
               </div>
 
               <div className="min-w-0 flex-1">

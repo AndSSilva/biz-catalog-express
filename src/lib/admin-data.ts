@@ -9,6 +9,7 @@ export type AdminProduct = {
   title: string;
   description: string;
   image_url: string | null;
+  images: string[];
   is_active: boolean;
   sort_order: number;
   category_id: string | null;
@@ -127,6 +128,13 @@ function useCompanyScope() {
   return { companyId: company?.id ?? null, isPending };
 }
 
+/** Ordena as fotos de um produto e devolve só as URLs. */
+function sortedImageUrls(images: { image_url: string; sort_order: number }[] | null | undefined) {
+  return [...(images ?? [])]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((row) => row.image_url);
+}
+
 export function useAdminProducts() {
   const { companyId } = useCompanyScope();
   return useQuery({
@@ -136,13 +144,16 @@ export function useAdminProducts() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, categories(id, name)",
+          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, categories(id, name), product_images(image_url, sort_order)",
         )
         .eq("company_id", companyId!)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).map((row) => ({
+        ...row,
+        images: sortedImageUrls(row.product_images),
+      }));
     },
   });
 }
@@ -156,13 +167,13 @@ export function useAdminProduct(id: string) {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, categories(id, name)",
+          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, categories(id, name), product_images(image_url, sort_order)",
         )
         .eq("id", id)
         .eq("company_id", companyId!)
         .single();
       if (error) throw error;
-      return data;
+      return { ...data, images: sortedImageUrls(data.product_images) };
     },
   });
 }
@@ -322,7 +333,7 @@ export function useSaveProduct() {
       id?: string | undefined;
       title: string;
       description: string;
-      image_url: string | null;
+      images: string[];
       is_active: boolean;
       sort_order: number;
       category_id: string;
@@ -331,13 +342,16 @@ export function useSaveProduct() {
       availability: ProductAvailability;
     }) => {
       const company = companyId();
+      const coverImageUrl = input.images[0] ?? null;
+      let productId: string;
+
       if (input.id) {
         const { error } = await supabase
           .from("products")
           .update({
             title: input.title,
             description: input.description,
-            image_url: input.image_url,
+            image_url: coverImageUrl,
             is_active: input.is_active,
             sort_order: input.sort_order,
             category_id: input.category_id,
@@ -348,30 +362,58 @@ export function useSaveProduct() {
           .eq("id", input.id)
           .eq("company_id", company);
         if (error) throw error;
-        return input.id;
+        productId = input.id;
+      } else {
+        const { data, error } = await supabase
+          .from("products")
+          .insert({
+            title: input.title,
+            description: input.description,
+            image_url: coverImageUrl,
+            is_active: input.is_active,
+            sort_order: input.sort_order,
+            category_id: input.category_id,
+            price: input.price,
+            on_sale: input.on_sale,
+            availability: input.availability,
+            company_id: company,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        productId = data.id;
       }
 
-      const { data, error } = await supabase
-        .from("products")
-        .insert({
-          title: input.title,
-          description: input.description,
-          image_url: input.image_url,
-          is_active: input.is_active,
-          sort_order: input.sort_order,
-          category_id: input.category_id,
-          price: input.price,
-          on_sale: input.on_sale,
-          availability: input.availability,
-          company_id: company,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      return data.id;
+      await replaceProductImages(productId, company, input.images);
+      return productId;
     },
     onSuccess: invalidate,
   });
+}
+
+/**
+ * Substitui a galeria de fotos de um produto pela lista informada, preservando a ordem.
+ * Feito como "apaga tudo e recria" para manter simples — o volume de fotos por produto é pequeno.
+ */
+async function replaceProductImages(productId: string, companyId: string, images: string[]) {
+  const { error: deleteError } = await supabase
+    .from("product_images")
+    .delete()
+    .eq("product_id", productId)
+    .eq("company_id", companyId);
+  if (deleteError) throw deleteError;
+
+  if (images.length === 0) return;
+
+  const { error: insertError } = await supabase.from("product_images").insert(
+    images.map((image_url, index) => ({
+      product_id: productId,
+      company_id: companyId,
+      image_url,
+      sort_order: index,
+    })),
+  );
+  if (insertError) throw insertError;
 }
 
 export function useDeleteProduct() {

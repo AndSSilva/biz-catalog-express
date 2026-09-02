@@ -1,4 +1,5 @@
-import { Minus, Plus, ShoppingBag, Tag, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Tag, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,18 +32,48 @@ export function ProductDetailModal({
   onDecrement,
 }: Props) {
   const inCart = quantity > 0;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [product?.id]);
 
   if (!product) return null;
+
+  const images = product.image_urls;
+  const hasMultipleImages = images.length > 1;
+
+  function goTo(index: number) {
+    if (images.length === 0) return;
+    setActiveIndex((index + images.length) % images.length);
+  }
+
+  function handleTouchStart(event: React.TouchEvent) {
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+  }
+
+  function handleTouchEnd(event: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const deltaX = (event.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(deltaX) < 40) return;
+    goTo(activeIndex + (deltaX < 0 ? 1 : -1));
+  }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl overflow-hidden p-0 sm:rounded-2xl">
         <div className="max-h-[85vh] overflow-y-auto">
-          <div className="relative aspect-4/3 w-full overflow-hidden bg-muted">
-            {product.image_url ? (
+          <div
+            className="relative aspect-4/3 w-full touch-pan-y select-none overflow-hidden bg-muted"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {images.length > 0 ? (
               <img
-                src={product.image_url}
-                alt={product.title}
+                src={images[activeIndex]}
+                alt={`${product.title}${hasMultipleImages ? ` — foto ${activeIndex + 1} de ${images.length}` : ""}`}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -64,7 +95,61 @@ export function ProductDetailModal({
                 Promoção
               </span>
             )}
+
+            {hasMultipleImages && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => goTo(activeIndex - 1)}
+                  aria-label="Foto anterior"
+                  className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                >
+                  <ChevronLeft className="h-5 w-5" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goTo(activeIndex + 1)}
+                  aria-label="Próxima foto"
+                  className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                >
+                  <ChevronRight className="h-5 w-5" aria-hidden />
+                </button>
+                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+                  {images.map((url, index) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => goTo(index)}
+                      aria-label={`Ver foto ${index + 1}`}
+                      aria-current={index === activeIndex}
+                      className={`h-2 w-2 rounded-full transition-colors ${
+                        index === activeIndex ? "bg-white" : "bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
+
+          {hasMultipleImages && (
+            <div className="flex gap-2 overflow-x-auto p-3 sm:px-6">
+              {images.map((url, index) => (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => goTo(index)}
+                  aria-label={`Ver foto ${index + 1}`}
+                  aria-current={index === activeIndex}
+                  className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
+                    index === activeIndex ? "border-primary" : "border-transparent"
+                  }`}
+                >
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="p-5 sm:p-6">
             <DialogHeader className="text-left">

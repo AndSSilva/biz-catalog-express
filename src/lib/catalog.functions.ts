@@ -42,6 +42,8 @@ export type CatalogCompany = {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
+  backgroundColor: string;
+  textColor: string;
 };
 
 const DEFAULT_SETTINGS: StoreSettings = {
@@ -64,7 +66,9 @@ export const getCatalog = createServerFn({ method: "GET" })
     // A empresa é resolvida no servidor a partir do endereço público (slug).
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, slug, logo_url, primary_color, secondary_color")
+      .select(
+        "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color",
+      )
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();
@@ -146,6 +150,8 @@ export const getCatalog = createServerFn({ method: "GET" })
         logoUrl: company.logo_url,
         primaryColor: company.primary_color,
         secondaryColor: company.secondary_color,
+        backgroundColor: company.background_color,
+        textColor: company.text_color,
       } satisfies CatalogCompany,
       products,
       categories: (categoriesResult.data ?? []) as CatalogCategory[],

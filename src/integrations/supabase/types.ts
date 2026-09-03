@@ -54,6 +54,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          background_color: string
           created_at: string
           id: string
           is_active: boolean
@@ -62,9 +63,11 @@ export type Database = {
           primary_color: string
           secondary_color: string
           slug: string
+          text_color: string
           updated_at: string
         }
         Insert: {
+          background_color?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -73,9 +76,11 @@ export type Database = {
           primary_color?: string
           secondary_color?: string
           slug: string
+          text_color?: string
           updated_at?: string
         }
         Update: {
+          background_color?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -84,6 +89,7 @@ export type Database = {
           primary_color?: string
           secondary_color?: string
           slug?: string
+          text_color?: string
           updated_at?: string
         }
         Relationships: []

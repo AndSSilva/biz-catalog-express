@@ -12,6 +12,8 @@ export type MasterCompany = {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
+  backgroundColor: string;
+  textColor: string;
   isActive: boolean;
   createdAt: string;
   admins: { userId: string; fullName: string; email: string }[];
@@ -35,7 +37,9 @@ export const listCompanies = createServerFn({ method: "GET" })
     const [{ data: companies, error }, { data: members }, { data: usersData }] = await Promise.all([
       supabaseAdmin
         .from("companies")
-        .select("id, name, slug, logo_url, primary_color, secondary_color, is_active, created_at")
+        .select(
+          "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color, is_active, created_at",
+        )
         .order("created_at", { ascending: true }),
       supabaseAdmin.from("company_members").select("user_id, company_id, full_name"),
       supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
@@ -52,6 +56,8 @@ export const listCompanies = createServerFn({ method: "GET" })
       logoUrl: company.logo_url,
       primaryColor: company.primary_color,
       secondaryColor: company.secondary_color,
+      backgroundColor: company.background_color,
+      textColor: company.text_color,
       isActive: company.is_active,
       createdAt: company.created_at,
       admins: (members ?? [])
@@ -65,6 +71,9 @@ export const listCompanies = createServerFn({ method: "GET" })
   });
 
 const hex = z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "Cor inválida");
+const hexOrEmpty = z
+  .string()
+  .refine((v) => v === "" || /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v), "Cor inválida");
 
 const companySchema = z.object({
   id: z.string().uuid().optional(),
@@ -77,6 +86,8 @@ const companySchema = z.object({
     .max(60),
   primaryColor: hex,
   secondaryColor: hex,
+  backgroundColor: hexOrEmpty.optional().default(""),
+  textColor: hexOrEmpty.optional().default(""),
   isActive: z.boolean(),
   logo: z
     .object({
@@ -118,6 +129,8 @@ export const saveCompany = createServerFn({ method: "POST" })
       slug: data.slug,
       primary_color: data.primaryColor,
       secondary_color: data.secondaryColor,
+      background_color: data.backgroundColor,
+      text_color: data.textColor,
       is_active: data.isActive,
       ...(logoUrl ? { logo_url: logoUrl } : {}),
     };
@@ -152,7 +165,9 @@ export const saveCompany = createServerFn({ method: "POST" })
 
 export const setCompanyActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid(), isActive: z.boolean() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), isActive: z.boolean() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     await assertMaster(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -180,7 +195,8 @@ export const deleteCompany = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .single();
     if (loadError || !company) throw new Error("Empresa não encontrada.");
-    if (company.slug !== data.confirmSlug) throw new Error("Confirmação não corresponde ao endereço da empresa.");
+    if (company.slug !== data.confirmSlug)
+      throw new Error("Confirmação não corresponde ao endereço da empresa.");
 
     const { data: orders } = await supabaseAdmin
       .from("orders")
@@ -211,7 +227,6 @@ export const deleteCompany = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
-
 
 export const createCompanyAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

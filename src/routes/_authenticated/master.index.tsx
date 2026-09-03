@@ -43,6 +43,8 @@ export const Route = createFileRoute("/_authenticated/master/")({
 
 const DEFAULT_PRIMARY = "#b8451f";
 const DEFAULT_SECONDARY = "#1f6f5c";
+const DEFAULT_BACKGROUND = "#fdfaf6";
+const DEFAULT_TEXT = "#2a231e";
 
 function MasterPage() {
   const navigate = useNavigate();
@@ -53,7 +55,6 @@ function MasterPage() {
   const [companyForm, setCompanyForm] = useState<MasterCompany | "new" | null>(null);
   const [adminFor, setAdminFor] = useState<MasterCompany | null>(null);
   const [deleteFor, setDeleteFor] = useState<MasterCompany | null>(null);
-
 
   if (isLoading) {
     return (
@@ -143,41 +144,54 @@ function MasterPage() {
                 className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center"
               >
                 <div className="flex min-w-0 flex-1 items-start gap-4">
-                {company.logoUrl ? (
-                  <img
-                    src={company.logoUrl}
-                    alt={`Logo ${company.name}`}
-                    className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                  />
-                ) : (
-                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
-                    <Building2 className="h-5 w-5" aria-hidden />
-                  </span>
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{company.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">/{company.slug}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span
-                      className="h-5 w-5 rounded-full border border-border"
-                      style={{ background: company.primaryColor }}
-                      title={`Cor primária ${company.primaryColor}`}
+                  {company.logoUrl ? (
+                    <img
+                      src={company.logoUrl}
+                      alt={`Logo ${company.name}`}
+                      className="h-14 w-14 shrink-0 rounded-xl object-cover"
                     />
-                    <span
-                      className="h-5 w-5 rounded-full border border-border"
-                      style={{ background: company.secondaryColor }}
-                      title={`Cor secundária ${company.secondaryColor}`}
-                    />
-                    <span className="text-xs break-words text-muted-foreground">
-                      {company.admins.length} admin(s)
-                      {company.admins.length > 0
-                        ? `: ${company.admins.map((admin) => admin.email).join(", ")}`
-                        : ""}
+                  ) : (
+                    <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+                      <Building2 className="h-5 w-5" aria-hidden />
                     </span>
-                  </div>
-                </div>
+                  )}
 
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{company.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">/{company.slug}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span
+                        className="h-5 w-5 rounded-full border border-border"
+                        style={{ background: company.primaryColor }}
+                        title={`Cor primária ${company.primaryColor}`}
+                      />
+                      <span
+                        className="h-5 w-5 rounded-full border border-border"
+                        style={{ background: company.secondaryColor }}
+                        title={`Cor secundária ${company.secondaryColor}`}
+                      />
+                      {company.backgroundColor && (
+                        <span
+                          className="h-5 w-5 rounded-full border border-border"
+                          style={{ background: company.backgroundColor }}
+                          title={`Cor de fundo ${company.backgroundColor}`}
+                        />
+                      )}
+                      {company.textColor && (
+                        <span
+                          className="h-5 w-5 rounded-full border border-border"
+                          style={{ background: company.textColor }}
+                          title={`Cor de letra ${company.textColor}`}
+                        />
+                      )}
+                      <span className="text-xs break-words text-muted-foreground">
+                        {company.admins.length} admin(s)
+                        {company.admins.length > 0
+                          ? `: ${company.admins.map((admin) => admin.email).join(", ")}`
+                          : ""}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -231,7 +245,6 @@ function MasterPage() {
       <CompanyDialog company={companyForm} onClose={() => setCompanyForm(null)} />
       <AdminDialog company={adminFor} onClose={() => setAdminFor(null)} />
       <DeleteCompanyDialog company={deleteFor} onClose={() => setDeleteFor(null)} />
-
     </div>
   );
 }
@@ -250,6 +263,8 @@ function CompanyDialog({
   const [slug, setSlug] = useState("");
   const [primaryColor, setPrimaryColor] = useState(DEFAULT_PRIMARY);
   const [secondaryColor, setSecondaryColor] = useState(DEFAULT_SECONDARY);
+  const [backgroundColor, setBackgroundColor] = useState("");
+  const [textColor, setTextColor] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [key, setKey] = useState<string | null>(null);
@@ -262,6 +277,8 @@ function CompanyDialog({
     setSlug(editing?.slug ?? "");
     setPrimaryColor(editing?.primaryColor ?? DEFAULT_PRIMARY);
     setSecondaryColor(editing?.secondaryColor ?? DEFAULT_SECONDARY);
+    setBackgroundColor(editing?.backgroundColor ?? "");
+    setTextColor(editing?.textColor ?? "");
     setIsActive(editing?.isActive ?? true);
     setLogoFile(null);
   }
@@ -287,6 +304,8 @@ function CompanyDialog({
                 slug: slugify(slug || name),
                 primaryColor,
                 secondaryColor,
+                backgroundColor,
+                textColor,
                 isActive,
                 logoFile,
               },
@@ -349,6 +368,50 @@ function CompanyDialog({
             </div>
           </div>
 
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Personalizar cor de fundo</p>
+                <p className="text-xs text-muted-foreground">
+                  Sem isso, usa o fundo padrão do sistema.
+                </p>
+              </div>
+              <Switch
+                checked={backgroundColor !== ""}
+                onCheckedChange={(checked) => setBackgroundColor(checked ? DEFAULT_BACKGROUND : "")}
+              />
+            </div>
+            {backgroundColor !== "" && (
+              <Input
+                type="color"
+                className="h-12 p-1"
+                value={backgroundColor}
+                onChange={(event) => setBackgroundColor(event.target.value)}
+              />
+            )}
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Personalizar cor de letra</p>
+                <p className="text-xs text-muted-foreground">
+                  Sem isso, usa a cor de texto padrão do sistema.
+                </p>
+              </div>
+              <Switch
+                checked={textColor !== ""}
+                onCheckedChange={(checked) => setTextColor(checked ? DEFAULT_TEXT : "")}
+              />
+            </div>
+            {textColor !== "" && (
+              <Input
+                type="color"
+                className="h-12 p-1"
+                value={textColor}
+                onChange={(event) => setTextColor(event.target.value)}
+              />
+            )}
+          </div>
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="company-logo">Logo (PNG ou JPG, até 2 MB)</Label>
             <Input
@@ -384,13 +447,7 @@ function CompanyDialog({
   );
 }
 
-function AdminDialog({
-  company,
-  onClose,
-}: {
-  company: MasterCompany | null;
-  onClose: () => void;
-}) {
+function AdminDialog({ company, onClose }: { company: MasterCompany | null; onClose: () => void }) {
   const create = useCreateCompanyAdmin();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");

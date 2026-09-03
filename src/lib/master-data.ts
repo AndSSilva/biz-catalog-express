@@ -8,7 +8,6 @@ import {
   setCompanyActive,
 } from "./master.functions";
 
-
 export function useMasterCompanies() {
   return useQuery({
     queryKey: ["master-companies"],
@@ -30,6 +29,8 @@ export type CompanyInput = {
   slug: string;
   primaryColor: string;
   secondaryColor: string;
+  backgroundColor: string;
+  textColor: string;
   isActive: boolean;
   logoFile?: File | null;
 };
@@ -60,6 +61,8 @@ export function useSaveCompany() {
           slug: input.slug,
           primaryColor: input.primaryColor,
           secondaryColor: input.secondaryColor,
+          backgroundColor: input.backgroundColor,
+          textColor: input.textColor,
           isActive: input.isActive,
           logo,
         },
@@ -80,12 +83,8 @@ export function useToggleCompanyActive() {
 export function useCreateCompanyAdmin() {
   const invalidate = useInvalidateCompanies();
   return useMutation({
-    mutationFn: (input: {
-      companyId: string;
-      fullName: string;
-      email: string;
-      password: string;
-    }) => createCompanyAdmin({ data: input }),
+    mutationFn: (input: { companyId: string; fullName: string; email: string; password: string }) =>
+      createCompanyAdmin({ data: input }),
     onSuccess: invalidate,
   });
 }

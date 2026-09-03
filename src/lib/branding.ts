@@ -4,6 +4,8 @@ export type CompanyBranding = {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
+  backgroundColor: string;
+  textColor: string;
 };
 
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -43,9 +45,16 @@ export function contrastForeground(hex: string) {
 export function brandingStyle(branding: {
   primaryColor: string;
   secondaryColor: string;
+  backgroundColor?: string;
+  textColor?: string;
 }): React.CSSProperties {
   const primary = isHexColor(branding.primaryColor) ? branding.primaryColor : null;
   const secondary = isHexColor(branding.secondaryColor) ? branding.secondaryColor : null;
+  const background =
+    branding.backgroundColor && isHexColor(branding.backgroundColor)
+      ? branding.backgroundColor
+      : null;
+  const text = branding.textColor && isHexColor(branding.textColor) ? branding.textColor : null;
 
   return {
     ...(primary
@@ -59,6 +68,16 @@ export function brandingStyle(branding: {
       ? {
           ["--secondary" as string]: secondary,
           ["--secondary-foreground" as string]: contrastForeground(secondary),
+        }
+      : {}),
+    ...(background
+      ? {
+          ["--background" as string]: background,
+        }
+      : {}),
+    ...(text
+      ? {
+          ["--foreground" as string]: text,
         }
       : {}),
   } as React.CSSProperties;

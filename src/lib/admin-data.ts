@@ -35,6 +35,8 @@ export type AdminCompany = {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
+  backgroundColor: string;
+  textColor: string;
   isActive: boolean;
 };
 
@@ -93,7 +95,9 @@ export function useMyCompany() {
 
       const { data: company, error } = await supabase
         .from("companies")
-        .select("id, name, slug, logo_url, primary_color, secondary_color, is_active")
+        .select(
+          "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color, is_active",
+        )
         .eq("id", member.company_id)
         .maybeSingle();
       if (error) throw error;
@@ -106,6 +110,8 @@ export function useMyCompany() {
         logoUrl: company.logo_url,
         primaryColor: company.primary_color,
         secondaryColor: company.secondary_color,
+        backgroundColor: company.background_color,
+        textColor: company.text_color,
         isActive: company.is_active,
       };
     },

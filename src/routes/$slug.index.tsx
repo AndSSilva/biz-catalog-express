@@ -157,7 +157,7 @@ function CatalogPage() {
             to="/$slug/carrinho"
             params={{ slug }}
             aria-label={`Abrir carrinho com ${count} ${count === 1 ? "item" : "itens"}`}
-            className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border bg-background transition-colors hover:bg-accent"
+            className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-accent"
           >
             <ShoppingCart className="h-5 w-5" aria-hidden />
             {count > 0 && (

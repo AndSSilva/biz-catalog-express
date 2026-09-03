@@ -41,20 +41,30 @@ export function contrastForeground(hex: string) {
 /**
  * Variáveis do design system sobrescritas com a paleta da empresa.
  * Aplicadas no elemento que envolve o catálogo/admin daquela empresa.
+ *
+ * `includeSurface` controla se a cor de fundo/letra personalizadas entram —
+ * elas são pensadas só para o catálogo público, não para a área administrativa.
  */
-export function brandingStyle(branding: {
-  primaryColor: string;
-  secondaryColor: string;
-  backgroundColor?: string;
-  textColor?: string;
-}): React.CSSProperties {
+export function brandingStyle(
+  branding: {
+    primaryColor: string;
+    secondaryColor: string;
+    backgroundColor?: string;
+    textColor?: string;
+  },
+  options: { includeSurface?: boolean } = {},
+): React.CSSProperties {
+  const includeSurface = options.includeSurface ?? true;
   const primary = isHexColor(branding.primaryColor) ? branding.primaryColor : null;
   const secondary = isHexColor(branding.secondaryColor) ? branding.secondaryColor : null;
   const background =
-    branding.backgroundColor && isHexColor(branding.backgroundColor)
+    includeSurface && branding.backgroundColor && isHexColor(branding.backgroundColor)
       ? branding.backgroundColor
       : null;
-  const text = branding.textColor && isHexColor(branding.textColor) ? branding.textColor : null;
+  const text =
+    includeSurface && branding.textColor && isHexColor(branding.textColor)
+      ? branding.textColor
+      : null;
 
   return {
     ...(primary

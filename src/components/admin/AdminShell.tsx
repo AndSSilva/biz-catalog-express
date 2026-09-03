@@ -61,7 +61,10 @@ export function AdminShell({ title, children }: { title: string; children: React
   }
 
   return (
-    <div className="min-h-screen bg-background" style={brandingStyle(company)}>
+    <div
+      className="min-h-screen bg-background"
+      style={brandingStyle(company, { includeSurface: false })}
+    >
       <header className="sticky top-0 z-30 border-b border-border bg-card">
         <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:flex sm:justify-between sm:px-5 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -137,7 +140,6 @@ export function AdminShell({ title, children }: { title: string; children: React
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-5 sm:px-5 sm:py-6">{children}</main>
-
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ShoppingBag, ShoppingCart, Tag } from "lucide-react";
+import { ShoppingBag, ShoppingCart, Tag, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { CartBar } from "@/components/catalog/CartBar";
@@ -131,6 +131,12 @@ function CatalogPage() {
               <p className="mt-0.5 line-clamp-2 text-[0.8125rem] leading-snug text-muted-foreground sm:mt-1 sm:text-sm">
                 {data.settings.storeTagline}
               </p>
+              {data.settings.storeAddress && (
+                <p className="mt-0.5 flex items-start gap-1 text-[0.75rem] leading-snug text-muted-foreground sm:text-[0.8125rem]">
+                  <MapPin className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                  <span className="line-clamp-1">{data.settings.storeAddress}</span>
+                </p>
+              )}
             </div>
           </div>
           <Link
@@ -185,8 +191,7 @@ function CatalogPage() {
 
           <div className="mt-2 flex items-center justify-between gap-3">
             <p className="truncate text-xs text-muted-foreground">
-              {visibleProducts.length}{" "}
-              {visibleProducts.length === 1 ? "produto" : "produtos"}
+              {visibleProducts.length} {visibleProducts.length === 1 ? "produto" : "produtos"}
             </p>
             {filtersActive && (
               <button
@@ -206,8 +211,6 @@ function CatalogPage() {
       </div>
 
       <main className="mx-auto max-w-6xl px-4 py-4 sm:px-5 sm:py-6">
-
-
         {visibleProducts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
             <h2 className="text-lg font-semibold">Nenhum produto disponível</h2>

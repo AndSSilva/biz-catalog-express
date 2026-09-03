@@ -47,9 +47,7 @@ function DashboardPage() {
           <section className="rounded-2xl border border-border bg-card p-4">
             <h2 className="text-lg font-bold">Produtos mais selecionados</h2>
             {data.topProducts.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Nenhum pedido registrado ainda.
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">Nenhum pedido registrado ainda.</p>
             ) : (
               <ul className="mt-3 divide-y divide-border">
                 {data.topProducts.map((product) => (
@@ -74,13 +72,29 @@ function DashboardPage() {
             ) : (
               <ul className="mt-3 divide-y divide-border">
                 {data.recentOrders.map((order) => (
-                  <li key={order.id} className="flex items-center justify-between gap-3 py-3 text-sm">
-                    <span className="text-muted-foreground">
-                      {new Date(order.created_at).toLocaleString("pt-BR")}
-                    </span>
-                    <span className="shrink-0 font-semibold">
-                      {order.total_items} {order.total_items === 1 ? "item" : "itens"}
-                    </span>
+                  <li key={order.id} className="flex flex-col gap-1 py-3 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {new Date(order.created_at).toLocaleString("pt-BR")}
+                      </span>
+                      <span className="shrink-0 font-semibold">
+                        {order.total_items} {order.total_items === 1 ? "item" : "itens"}
+                      </span>
+                    </div>
+                    {(order.customer_name || order.customer_phone) && (
+                      <p className="text-xs text-muted-foreground">
+                        {order.customer_name}
+                        {order.customer_name && order.customer_phone && " · "}
+                        {order.customer_phone}
+                      </p>
+                    )}
+                    {order.delivery_method && (
+                      <p className="text-xs font-medium text-primary">
+                        {order.delivery_method === "retirada"
+                          ? "Retirada na loja"
+                          : `Tele-entrega${order.delivery_address ? ` — ${order.delivery_address}` : ""}`}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>

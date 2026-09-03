@@ -6,6 +6,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useSaveSettings, useSettings } from "@/lib/admin-data";
 import { normalizeWhatsappNumber } from "@/lib/whatsapp";
@@ -32,6 +33,8 @@ function SettingsPage() {
     greeting: "",
     store_name: "",
     store_tagline: "",
+    enable_delivery_selection: "false",
+    store_address: "",
   });
 
   useEffect(() => {
@@ -41,6 +44,8 @@ function SettingsPage() {
       greeting: data.get("greeting") ?? "",
       store_name: data.get("store_name") ?? "",
       store_tagline: data.get("store_tagline") ?? "",
+      enable_delivery_selection: data.get("enable_delivery_selection") ?? "false",
+      store_address: data.get("store_address") ?? "",
     });
   }, [data]);
 
@@ -108,6 +113,35 @@ function SettingsPage() {
               value={form.store_tagline}
               onChange={(event) => setForm({ ...form, store_tagline: event.target.value })}
             />
+          </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-background p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Permitir escolher forma de entrega</p>
+              <p className="text-xs text-muted-foreground">
+                Ao finalizar o pedido, o cliente escolhe entre retirada na loja ou tele-entrega.
+              </p>
+            </div>
+            <Switch
+              checked={form.enable_delivery_selection === "true"}
+              onCheckedChange={(checked) =>
+                setForm({ ...form, enable_delivery_selection: checked ? "true" : "false" })
+              }
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="store_address">Endereço da loja (retirada)</Label>
+            <Textarea
+              id="store_address"
+              rows={2}
+              placeholder="Rua Exemplo, 123 — Bairro, Cidade/UF"
+              value={form.store_address}
+              onChange={(event) => setForm({ ...form, store_address: event.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Exibido no catálogo e mostrado ao cliente quando ele escolher retirada na loja.
+            </p>
           </div>
 
           <Button type="submit" className="h-12 rounded-full" disabled={save.isPending}>

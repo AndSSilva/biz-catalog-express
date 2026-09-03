@@ -502,7 +502,15 @@ export type DashboardData = {
   totalItems: number;
   activeProducts: number;
   topProducts: { title: string; quantity: number }[];
-  recentOrders: { id: string; created_at: string; total_items: number }[];
+  recentOrders: {
+    id: string;
+    created_at: string;
+    total_items: number;
+    customer_name: string | null;
+    customer_phone: string | null;
+    delivery_method: string | null;
+    delivery_address: string | null;
+  }[];
 };
 
 export function useDashboard() {
@@ -515,7 +523,9 @@ export function useDashboard() {
       const [orders, activeCount] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, created_at, total_items")
+          .select(
+            "id, created_at, total_items, customer_name, customer_phone, delivery_method, delivery_address",
+          )
           .eq("company_id", company)
           .order("created_at", { ascending: false })
           .limit(500),

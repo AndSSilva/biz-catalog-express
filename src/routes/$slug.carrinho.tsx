@@ -16,7 +16,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { CheckoutDialog, type CheckoutSubmission } from "@/components/catalog/CheckoutDialog";
 import { brandingStyle } from "@/lib/branding";
+import { saveCheckoutInfo } from "@/lib/checkout-info";
 import { clearCart, removeFromCart, setQuantity, totalItems, useCart } from "@/lib/cart";
 import { catalogQueryOptions } from "@/lib/catalog-queries";
 import { recordOrder } from "@/lib/catalog.functions";
@@ -50,10 +52,10 @@ function CartPage() {
   const submitOrder = useServerFn(recordOrder);
 
   const [confirmClear, setConfirmClear] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
-
-  function handleFinish() {
+  function handleConfirmCheckout(info: CheckoutSubmission) {
     if (items.length === 0 || finishing) return;
     const number = data.settings.whatsappNumber;
     if (!number) {
@@ -62,7 +64,11 @@ function CartPage() {
     }
 
     setFinishing(true);
-    const message = buildOrderMessage(items, data.settings.greeting);
+    const message = buildOrderMessage(items, data.settings.greeting, {
+      customerName: info.customerName,
+      deliveryMethod: info.deliveryMethod,
+      deliveryAddress: info.deliveryAddress,
+    });
     const url = buildWhatsappUrl(number, message);
     const payload = {
       slug,
@@ -71,6 +77,10 @@ function CartPage() {
         title: item.title,
         quantity: item.quantity,
       })),
+      customerName: info.customerName,
+      customerPhone: info.customerPhone,
+      deliveryMethod: info.deliveryMethod,
+      deliveryAddress: info.deliveryAddress,
     };
 
     // Abre o WhatsApp de forma sincrona (dentro do gesto do usuário),
@@ -89,16 +99,17 @@ function CartPage() {
       }
     }
 
-    // Registra a conversão em background.
+    // Registra o pedido em background.
     void submitOrder({ data: payload }).catch((error) => {
       console.error("recordOrder", error);
     });
 
+    saveCheckoutInfo({ customerName: info.customerName, customerPhone: info.customerPhone });
     clearCart();
     setFinishing(false);
+    setCheckoutOpen(false);
     toast.success("Pedido enviado para o WhatsApp");
   }
-
 
   return (
     <div className="min-h-screen bg-background pb-32" style={brandingStyle(data.company)}>
@@ -227,9 +238,9 @@ function CartPage() {
             <Button
               className="h-14 w-full rounded-full text-base font-bold"
               disabled={finishing}
-              onClick={handleFinish}
+              onClick={() => setCheckoutOpen(true)}
             >
-              {finishing ? "Abrindo WhatsApp..." : "Finalizar pedido no WhatsApp"}
+              Finalizar pedido no WhatsApp
             </Button>
             <p className="text-center text-xs text-muted-foreground">
               Você continua a conversa no WhatsApp para confirmar o pedido.
@@ -259,6 +270,15 @@ function CartPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CheckoutDialog
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        onConfirm={handleConfirmCheckout}
+        submitting={finishing}
+        enableDeliverySelection={data.settings.enableDeliverySelection}
+        storeAddress={data.settings.storeAddress}
+      />
     </div>
   );
 }

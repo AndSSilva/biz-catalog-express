@@ -30,6 +30,8 @@ export type StoreSettings = {
   greeting: string;
   storeName: string;
   storeTagline: string;
+  enableDeliverySelection: boolean;
+  storeAddress: string;
 };
 
 export type CatalogCompany = {
@@ -46,6 +48,8 @@ const DEFAULT_SETTINGS: StoreSettings = {
   greeting: "Olá! Gostaria de fazer um pedido:",
   storeName: "Catálogo",
   storeTagline: "Escolha os produtos e finalize pelo WhatsApp",
+  enableDeliverySelection: false,
+  storeAddress: "",
 };
 
 const slugSchema = z.object({ slug: z.string().min(1).max(80) });
@@ -118,6 +122,8 @@ export const getCatalog = createServerFn({ method: "GET" })
       greeting: map.get("greeting") || DEFAULT_SETTINGS.greeting,
       storeName: map.get("store_name") || company.name,
       storeTagline: map.get("store_tagline") || DEFAULT_SETTINGS.storeTagline,
+      enableDeliverySelection: map.get("enable_delivery_selection") === "true",
+      storeAddress: map.get("store_address") ?? DEFAULT_SETTINGS.storeAddress,
     };
 
     const products: CatalogProduct[] = (productsResult.data ?? []).map((product) => {
@@ -177,6 +183,10 @@ const orderSchema = z.object({
     )
     .min(1)
     .max(100),
+  customerName: z.string().trim().min(2).max(120),
+  customerPhone: z.string().trim().min(8).max(30),
+  deliveryMethod: z.enum(["retirada", "tele_entrega"]).nullable(),
+  deliveryAddress: z.string().trim().max(300).nullable(),
 });
 
 /** Registra a conversão no momento em que o cliente finaliza o pedido. */
@@ -212,7 +222,14 @@ export const recordOrder = createServerFn({ method: "POST" })
 
     const { data: order, error } = await supabase
       .from("orders")
-      .insert({ total_items: total, company_id: company.id })
+      .insert({
+        total_items: total,
+        company_id: company.id,
+        customer_name: data.customerName,
+        customer_phone: data.customerPhone,
+        delivery_method: data.deliveryMethod,
+        delivery_address: data.deliveryMethod === "tele_entrega" ? data.deliveryAddress : null,
+      })
       .select("id")
       .single();
 

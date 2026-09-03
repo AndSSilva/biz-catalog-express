@@ -163,18 +163,30 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          delivery_address: string | null
+          delivery_method: string | null
           id: string
           total_items: number
         }
         Insert: {
           company_id: string
           created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_method?: string | null
           id?: string
           total_items?: number
         }
         Update: {
           company_id?: string
           created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_method?: string | null
           id?: string
           total_items?: number
         }

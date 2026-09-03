@@ -200,7 +200,9 @@ export type Database = {
           is_active: boolean
           on_sale: boolean
           price: number | null
+          show_stock_in_catalog: boolean
           sort_order: number
+          stock_quantity: number
           title: string
           updated_at: string
         }
@@ -215,7 +217,9 @@ export type Database = {
           is_active?: boolean
           on_sale?: boolean
           price?: number | null
+          show_stock_in_catalog?: boolean
           sort_order?: number
+          stock_quantity?: number
           title: string
           updated_at?: string
         }
@@ -230,7 +234,9 @@ export type Database = {
           is_active?: boolean
           on_sale?: boolean
           price?: number | null
+          show_stock_in_catalog?: boolean
           sort_order?: number
+          stock_quantity?: number
           title?: string
           updated_at?: string
         }

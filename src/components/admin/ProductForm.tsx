@@ -47,6 +47,13 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const [availability, setAvailability] = useState<ProductAvailability>(
     product?.availability ?? "pronta_entrega",
   );
+  const [stockQuantity, setStockQuantity] = useState(() => {
+    if (product) return product.stock_quantity;
+    return availability === "pronta_entrega" ? 1 : 0;
+  });
+  const [showStockInCatalog, setShowStockInCatalog] = useState(
+    product?.show_stock_in_catalog ?? false,
+  );
   const [brief, setBrief] = useState("");
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -125,6 +132,8 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         price: parsedPrice,
         on_sale: onSale,
         availability,
+        stock_quantity: availability === "sob_encomenda" ? 0 : stockQuantity,
+        show_stock_in_catalog: availability === "sob_encomenda" ? false : showStockInCatalog,
       });
       toast.success(product ? "Produto atualizado" : "Produto criado");
       void navigate({ to: "/admin/produtos" });
@@ -320,7 +329,16 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           <Label htmlFor="availability">Disponibilidade</Label>
           <Select
             value={availability}
-            onValueChange={(value) => setAvailability(value as ProductAvailability)}
+            onValueChange={(value) => {
+              const next = value as ProductAvailability;
+              setAvailability(next);
+              if (next === "sob_encomenda") {
+                setStockQuantity(0);
+                setShowStockInCatalog(false);
+              } else if (stockQuantity === 0) {
+                setStockQuantity(1);
+              }
+            }}
           >
             <SelectTrigger id="availability" className="h-12">
               <SelectValue />
@@ -333,6 +351,70 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4">
+        <div className="flex flex-col gap-2 sm:max-w-[220px]">
+          <Label htmlFor="stock">Quantidade em estoque</Label>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0 rounded-full"
+              disabled={availability === "sob_encomenda" || stockQuantity <= 1}
+              onClick={() => setStockQuantity((value) => Math.max(1, value - 1))}
+              aria-label="Diminuir quantidade em estoque"
+            >
+              −
+            </Button>
+            <Input
+              id="stock"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={999}
+              className="h-11 text-center"
+              disabled={availability === "sob_encomenda"}
+              value={stockQuantity}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                if (!Number.isFinite(parsed)) return;
+                setStockQuantity(Math.min(999, Math.max(1, Math.round(parsed))));
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0 rounded-full"
+              disabled={availability === "sob_encomenda" || stockQuantity >= 999}
+              onClick={() => setStockQuantity((value) => Math.min(999, value + 1))}
+              aria-label="Aumentar quantidade em estoque"
+            >
+              +
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {availability === "sob_encomenda"
+              ? "Sob encomenda não usa controle de estoque."
+              : "De 1 a 999 unidades."}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Mostrar estoque no catálogo</p>
+            <p className="text-xs text-muted-foreground">
+              Exibe a quantidade disponível (ou "Esgotado") para o cliente.
+            </p>
+          </div>
+          <Switch
+            checked={showStockInCatalog}
+            disabled={availability === "sob_encomenda"}
+            onCheckedChange={setShowStockInCatalog}
+          />
         </div>
       </div>
 

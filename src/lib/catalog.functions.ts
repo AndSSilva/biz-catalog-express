@@ -16,6 +16,8 @@ export type CatalogProduct = {
   price: number | null;
   on_sale: boolean;
   availability: ProductAvailability;
+  stock_quantity: number;
+  show_stock_in_catalog: boolean;
 };
 
 export type CatalogCategory = {
@@ -70,7 +72,9 @@ export const getCatalog = createServerFn({ method: "GET" })
     const [productsResult, settingsResult, categoriesResult] = await Promise.all([
       supabase
         .from("products")
-        .select("id, title, description, image_url, category_id, price, on_sale, availability")
+        .select(
+          "id, title, description, image_url, category_id, price, on_sale, availability, stock_quantity, show_stock_in_catalog",
+        )
         .eq("company_id", company.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true })

@@ -2,7 +2,7 @@ import { Check, Images, Minus, Plus, ShoppingBag, Tag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { CatalogProduct } from "@/lib/catalog.functions";
-import { AVAILABILITY_LABEL, formatPrice } from "@/lib/price";
+import { AVAILABILITY_LABEL, formatPrice, stockLabel } from "@/lib/price";
 
 type Props = {
   product: CatalogProduct;
@@ -22,6 +22,7 @@ export function ProductCard({
   onClick,
 }: Props) {
   const inCart = quantity > 0;
+  const stock = stockLabel(product);
 
   return (
     <article
@@ -76,6 +77,17 @@ export function ProductCard({
           <span className="rounded-full bg-muted px-2 py-0.5 text-[0.6875rem] font-medium text-muted-foreground">
             {AVAILABILITY_LABEL[product.availability]}
           </span>
+          {stock && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
+                product.stock_quantity <= 0
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {stock}
+            </span>
+          )}
         </div>
         <p className="line-clamp-2 text-sm sm:line-clamp-3 leading-relaxed text-muted-foreground">
           {product.description}

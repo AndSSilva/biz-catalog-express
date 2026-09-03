@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import type { CatalogProduct } from "@/lib/catalog.functions";
-import { AVAILABILITY_LABEL, formatPrice } from "@/lib/price";
+import { AVAILABILITY_LABEL, formatPrice, stockLabel } from "@/lib/price";
 
 type Props = {
   product: CatalogProduct | null;
@@ -40,6 +40,8 @@ export function ProductDetailModal({
   }, [product?.id]);
 
   if (!product) return null;
+
+  const stock = stockLabel(product);
 
   const images = product.image_urls;
   const hasMultipleImages = images.length > 1;
@@ -166,6 +168,17 @@ export function ProductDetailModal({
               <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                 {AVAILABILITY_LABEL[product.availability]}
               </span>
+              {stock && (
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                    product.stock_quantity <= 0
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {stock}
+                </span>
+              )}
             </div>
 
             <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground sm:text-base">

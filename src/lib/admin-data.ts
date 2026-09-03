@@ -16,6 +16,8 @@ export type AdminProduct = {
   price: number | null;
   on_sale: boolean;
   availability: ProductAvailability;
+  stock_quantity: number;
+  show_stock_in_catalog: boolean;
   categories?: { id: string; name: string } | null;
 };
 
@@ -144,7 +146,7 @@ export function useAdminProducts() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, categories(id, name), product_images(image_url, sort_order)",
+          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, stock_quantity, show_stock_in_catalog, categories(id, name), product_images(image_url, sort_order)",
         )
         .eq("company_id", companyId!)
         .order("sort_order", { ascending: true })
@@ -167,7 +169,7 @@ export function useAdminProduct(id: string) {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, categories(id, name), product_images(image_url, sort_order)",
+          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, stock_quantity, show_stock_in_catalog, categories(id, name), product_images(image_url, sort_order)",
         )
         .eq("id", id)
         .eq("company_id", companyId!)
@@ -340,6 +342,8 @@ export function useSaveProduct() {
       price: number | null;
       on_sale: boolean;
       availability: ProductAvailability;
+      stock_quantity: number;
+      show_stock_in_catalog: boolean;
     }) => {
       const company = companyId();
       const coverImageUrl = input.images[0] ?? null;
@@ -358,6 +362,8 @@ export function useSaveProduct() {
             price: input.price,
             on_sale: input.on_sale,
             availability: input.availability,
+            stock_quantity: input.stock_quantity,
+            show_stock_in_catalog: input.show_stock_in_catalog,
           })
           .eq("id", input.id)
           .eq("company_id", company);
@@ -376,6 +382,8 @@ export function useSaveProduct() {
             price: input.price,
             on_sale: input.on_sale,
             availability: input.availability,
+            stock_quantity: input.stock_quantity,
+            show_stock_in_catalog: input.show_stock_in_catalog,
             company_id: company,
           })
           .select("id")

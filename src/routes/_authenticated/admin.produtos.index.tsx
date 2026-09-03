@@ -130,6 +130,17 @@ function ProductsPage() {
                       Promoção
                     </span>
                   )}
+                  {product.availability === "pronta_entrega" && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
+                        product.stock_quantity <= 0
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {product.stock_quantity} em estoque
+                    </span>
+                  )}
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <Switch

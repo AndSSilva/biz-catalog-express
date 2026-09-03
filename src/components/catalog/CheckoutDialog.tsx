@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readSavedCheckoutInfo } from "@/lib/checkout-info";
+import { safeExternalUrl } from "@/lib/utils";
 
 export type DeliveryMethod = "retirada" | "tele_entrega";
 
@@ -29,6 +30,7 @@ type Props = {
   submitting: boolean;
   enableDeliverySelection: boolean;
   storeAddress: string;
+  storeMapsUrl: string;
 };
 
 export function CheckoutDialog({
@@ -38,6 +40,7 @@ export function CheckoutDialog({
   submitting,
   enableDeliverySelection,
   storeAddress,
+  storeMapsUrl,
 }: Props) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -55,6 +58,7 @@ export function CheckoutDialog({
   }, [open]);
 
   const nameValid = customerName.trim().length >= 2;
+  const mapsUrl = safeExternalUrl(storeMapsUrl);
   const phoneValid = customerPhone.replace(/\D/g, "").length >= 8;
   const deliveryValid =
     !enableDeliverySelection ||
@@ -139,7 +143,22 @@ export function CheckoutDialog({
               {deliveryMethod === "retirada" && storeAddress && (
                 <p className="flex items-start gap-1.5 rounded-xl bg-muted p-3 text-xs text-muted-foreground">
                   <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-                  {storeAddress}
+                  <span className="min-w-0 flex-1">
+                    {storeAddress}
+                    {mapsUrl && (
+                      <>
+                        {" — "}
+                        <a
+                          href={mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-primary underline-offset-2 hover:underline"
+                        >
+                          abrir no Maps
+                        </a>
+                      </>
+                    )}
+                  </span>
                 </p>
               )}
 

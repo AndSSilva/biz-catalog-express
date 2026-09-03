@@ -13,6 +13,7 @@ import { addToCart, setQuantity, totalItems, useCart } from "@/lib/cart";
 import { catalogQueryOptions } from "@/lib/catalog-queries";
 import type { CatalogProduct, ProductAvailability } from "@/lib/catalog.functions";
 import { AVAILABILITY_LABEL } from "@/lib/price";
+import { safeExternalUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/$slug/")({
   loader: ({ context, params }) =>
@@ -74,6 +75,7 @@ function CatalogPage() {
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
 
   const categories = data.categories ?? [];
+  const storeMapsUrl = safeExternalUrl(data.settings.storeMapsUrl);
   const visibleProducts = useMemo(
     () =>
       data.products.filter((product) => {
@@ -131,12 +133,24 @@ function CatalogPage() {
               <p className="mt-0.5 line-clamp-2 text-[0.8125rem] leading-snug text-muted-foreground sm:mt-1 sm:text-sm">
                 {data.settings.storeTagline}
               </p>
-              {data.settings.storeAddress && (
-                <p className="mt-0.5 flex items-start gap-1 text-[0.75rem] leading-snug text-muted-foreground sm:text-[0.8125rem]">
-                  <MapPin className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-                  <span className="line-clamp-1">{data.settings.storeAddress}</span>
-                </p>
-              )}
+              {data.settings.storeAddress &&
+                (storeMapsUrl ? (
+                  <a
+                    href={storeMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-0.5 flex items-start gap-1 text-[0.75rem] leading-snug text-primary underline-offset-2 hover:underline sm:text-[0.8125rem]"
+                  >
+                    <MapPin className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                    <span className="line-clamp-1">{data.settings.storeAddress}</span>
+                  </a>
+                ) : (
+                  <p className="mt-0.5 flex items-start gap-1 text-[0.75rem] leading-snug text-muted-foreground sm:text-[0.8125rem]">
+                    <MapPin className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                    <span className="line-clamp-1">{data.settings.storeAddress}</span>
+                  </p>
+                ))}
             </div>
           </div>
           <Link

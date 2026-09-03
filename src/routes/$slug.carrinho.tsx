@@ -278,6 +278,7 @@ function CartPage() {
         submitting={finishing}
         enableDeliverySelection={data.settings.enableDeliverySelection}
         storeAddress={data.settings.storeAddress}
+        storeMapsUrl={data.settings.storeMapsUrl}
       />
     </div>
   );

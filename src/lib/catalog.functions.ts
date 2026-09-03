@@ -32,6 +32,7 @@ export type StoreSettings = {
   storeTagline: string;
   enableDeliverySelection: boolean;
   storeAddress: string;
+  storeMapsUrl: string;
 };
 
 export type CatalogCompany = {
@@ -50,6 +51,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   storeTagline: "Escolha os produtos e finalize pelo WhatsApp",
   enableDeliverySelection: false,
   storeAddress: "",
+  storeMapsUrl: "",
 };
 
 const slugSchema = z.object({ slug: z.string().min(1).max(80) });
@@ -124,6 +126,7 @@ export const getCatalog = createServerFn({ method: "GET" })
       storeTagline: map.get("store_tagline") || DEFAULT_SETTINGS.storeTagline,
       enableDeliverySelection: map.get("enable_delivery_selection") === "true",
       storeAddress: map.get("store_address") ?? DEFAULT_SETTINGS.storeAddress,
+      storeMapsUrl: map.get("store_maps_url") ?? DEFAULT_SETTINGS.storeMapsUrl,
     };
 
     const products: CatalogProduct[] = (productsResult.data ?? []).map((product) => {

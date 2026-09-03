@@ -35,6 +35,7 @@ function SettingsPage() {
     store_tagline: "",
     enable_delivery_selection: "false",
     store_address: "",
+    store_maps_url: "",
   });
 
   useEffect(() => {
@@ -46,6 +47,7 @@ function SettingsPage() {
       store_tagline: data.get("store_tagline") ?? "",
       enable_delivery_selection: data.get("enable_delivery_selection") ?? "false",
       store_address: data.get("store_address") ?? "",
+      store_maps_url: data.get("store_maps_url") ?? "",
     });
   }, [data]);
 
@@ -141,6 +143,22 @@ function SettingsPage() {
             />
             <p className="text-xs text-muted-foreground">
               Exibido no catálogo e mostrado ao cliente quando ele escolher retirada na loja.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="store_maps_url">Link do Google Maps (opcional)</Label>
+            <Input
+              id="store_maps_url"
+              inputMode="url"
+              className="h-12"
+              placeholder="https://maps.app.goo.gl/..."
+              value={form.store_maps_url}
+              onChange={(event) => setForm({ ...form, store_maps_url: event.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Se preenchido, o endereço vira um link — o cliente toca e o Maps abre com a
+              localização da loja. Copie o link direto do app ou site do Google Maps.
             </p>
           </div>
 

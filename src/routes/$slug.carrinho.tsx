@@ -119,7 +119,7 @@ function CartPage() {
             to="/$slug"
             params={{ slug }}
             aria-label="Voltar ao catálogo"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-background transition-colors hover:bg-accent"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-accent"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden />
           </Link>
@@ -171,7 +171,7 @@ function CartPage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-10 w-10 rounded-full"
+                        className="h-10 w-10 rounded-full border-border bg-card text-foreground hover:bg-accent hover:text-foreground"
                         aria-label={`Diminuir quantidade de ${item.title}`}
                         onClick={() => setQuantity(item.id, item.quantity - 1)}
                       >
@@ -183,7 +183,7 @@ function CartPage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-10 w-10 rounded-full"
+                        className="h-10 w-10 rounded-full border-border bg-card text-foreground hover:bg-accent hover:text-foreground"
                         aria-label={`Aumentar quantidade de ${item.title}`}
                         onClick={() => setQuantity(item.id, item.quantity + 1)}
                       >

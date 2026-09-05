@@ -206,7 +206,7 @@ export const recordOrder = createServerFn({ method: "POST" })
 
     const { data: company } = await supabase
       .from("companies")
-      .select("id")
+      .select("id, stock_control_enabled")
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();
@@ -216,14 +216,14 @@ export const recordOrder = createServerFn({ method: "POST" })
     // Só produtos ativos da própria empresa entram no registro do pedido.
     const { data: valid } = await supabase
       .from("products")
-      .select("id, title")
+      .select("id, title, availability")
       .eq("company_id", company.id)
       .in(
         "id",
         data.items.map((item) => item.id),
       );
 
-    const allowed = new Map((valid ?? []).map((row) => [row.id, row.title]));
+    const allowed = new Map((valid ?? []).map((row) => [row.id, row]));
     const items = data.items.filter((item) => allowed.has(item.id));
     if (items.length === 0) return { ok: false as const };
 
@@ -251,7 +251,7 @@ export const recordOrder = createServerFn({ method: "POST" })
       items.map((item) => ({
         order_id: order.id,
         product_id: item.id,
-        product_title: allowed.get(item.id) ?? item.title,
+        product_title: allowed.get(item.id)?.title ?? item.title,
         quantity: item.quantity,
       })),
     );
@@ -259,6 +259,30 @@ export const recordOrder = createServerFn({ method: "POST" })
     if (itemsError) {
       console.error("recordOrder items", itemsError);
       return { ok: false as const };
+    }
+
+    // Com controle de estoque ligado, cada item de "pronta entrega" gera uma
+    // baixa pendente — o admin aprova ou cancela depois na aba Estoque.
+    // "sob encomenda" nunca controla estoque, então fica de fora.
+    if (company.stock_control_enabled) {
+      const stockItems = items.filter(
+        (item) => allowed.get(item.id)?.availability === "pronta_entrega",
+      );
+      if (stockItems.length > 0) {
+        const { error: stockError } = await supabase.from("stock_pending_operations").insert(
+          stockItems.map((item) => ({
+            company_id: company.id,
+            order_id: order.id,
+            product_id: item.id,
+            product_title: allowed.get(item.id)?.title ?? item.title,
+            quantity: item.quantity,
+          })),
+        );
+        if (stockError) {
+          // Não falha o pedido por isso — o pedido em si já foi registrado.
+          console.error("recordOrder stock_pending_operations", stockError);
+        }
+      }
     }
 
     return { ok: true as const };

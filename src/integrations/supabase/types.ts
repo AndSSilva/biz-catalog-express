@@ -63,6 +63,7 @@ export type Database = {
           primary_color: string
           secondary_color: string
           slug: string
+          stock_control_enabled: boolean
           text_color: string
           updated_at: string
         }
@@ -76,6 +77,7 @@ export type Database = {
           primary_color?: string
           secondary_color?: string
           slug: string
+          stock_control_enabled?: boolean
           text_color?: string
           updated_at?: string
         }
@@ -89,6 +91,7 @@ export type Database = {
           primary_color?: string
           secondary_color?: string
           slug?: string
+          stock_control_enabled?: boolean
           text_color?: string
           updated_at?: string
         }
@@ -310,6 +313,211 @@ export type Database = {
           },
           {
             foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_pending_operations: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          order_id: string | null
+          product_id: string | null
+          product_title: string
+          quantity: number
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_id?: string | null
+          product_title: string
+          quantity: number
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_id?: string | null
+          product_title?: string
+          quantity?: number
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_pending_operations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pending_operations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pending_operations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_inventory_counts: {
+        Row: {
+          company_id: string
+          finished_at: string | null
+          finished_by: string | null
+          id: string
+          started_at: string
+          started_by: string | null
+          status: string
+        }
+        Insert: {
+          company_id: string
+          finished_at?: string | null
+          finished_by?: string | null
+          id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          finished_at?: string | null
+          finished_by?: string | null
+          id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_inventory_counts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_inventory_count_items: {
+        Row: {
+          company_id: string
+          counted_at: string | null
+          counted_quantity: number | null
+          id: string
+          inventory_count_id: string
+          previous_quantity: number
+          product_id: string | null
+          product_title: string
+          sort_order: number
+        }
+        Insert: {
+          company_id: string
+          counted_at?: string | null
+          counted_quantity?: number | null
+          id?: string
+          inventory_count_id: string
+          previous_quantity: number
+          product_id?: string | null
+          product_title: string
+          sort_order?: number
+        }
+        Update: {
+          company_id?: string
+          counted_at?: string | null
+          counted_quantity?: number | null
+          id?: string
+          inventory_count_id?: string
+          previous_quantity?: number
+          product_id?: string | null
+          product_title?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_inventory_count_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventory_count_items_inventory_count_id_fkey"
+            columns: ["inventory_count_id"]
+            isOneToOne: false
+            referencedRelation: "stock_inventory_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventory_count_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          company_id: string
+          created_at: string
+          details: string | null
+          id: string
+          product_id: string | null
+          product_title: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          company_id: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          product_id?: string | null
+          product_title?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          company_id?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          product_id?: string | null
+          product_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_logs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"

@@ -31,6 +31,7 @@ export type CompanyInput = {
   secondaryColor: string;
   backgroundColor: string;
   textColor: string;
+  stockControlEnabled: boolean;
   isActive: boolean;
   logoFile?: File | null;
 };
@@ -63,6 +64,7 @@ export function useSaveCompany() {
           secondaryColor: input.secondaryColor,
           backgroundColor: input.backgroundColor,
           textColor: input.textColor,
+          stockControlEnabled: input.stockControlEnabled,
           isActive: input.isActive,
           logo,
         },

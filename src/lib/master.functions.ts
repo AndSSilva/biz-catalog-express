@@ -14,6 +14,7 @@ export type MasterCompany = {
   secondaryColor: string;
   backgroundColor: string;
   textColor: string;
+  stockControlEnabled: boolean;
   isActive: boolean;
   createdAt: string;
   admins: { userId: string; fullName: string; email: string }[];
@@ -38,7 +39,7 @@ export const listCompanies = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("companies")
         .select(
-          "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color, is_active, created_at",
+          "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color, stock_control_enabled, is_active, created_at",
         )
         .order("created_at", { ascending: true }),
       supabaseAdmin.from("company_members").select("user_id, company_id, full_name"),
@@ -58,6 +59,7 @@ export const listCompanies = createServerFn({ method: "GET" })
       secondaryColor: company.secondary_color,
       backgroundColor: company.background_color,
       textColor: company.text_color,
+      stockControlEnabled: company.stock_control_enabled,
       isActive: company.is_active,
       createdAt: company.created_at,
       admins: (members ?? [])
@@ -88,6 +90,7 @@ const companySchema = z.object({
   secondaryColor: hex,
   backgroundColor: hexOrEmpty.optional().default(""),
   textColor: hexOrEmpty.optional().default(""),
+  stockControlEnabled: z.boolean().optional().default(false),
   isActive: z.boolean(),
   logo: z
     .object({
@@ -131,6 +134,7 @@ export const saveCompany = createServerFn({ method: "POST" })
       secondary_color: data.secondaryColor,
       background_color: data.backgroundColor,
       text_color: data.textColor,
+      stock_control_enabled: data.stockControlEnabled,
       is_active: data.isActive,
       ...(logoUrl ? { logo_url: logoUrl } : {}),
     };

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BarChart3, ExternalLink, LogOut, Package, Settings, Tags } from "lucide-react";
+import { BarChart3, Boxes, ExternalLink, LogOut, Package, Settings, Tags } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -7,17 +7,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useMyCompany } from "@/lib/admin-data";
 import { brandingStyle } from "@/lib/branding";
 
-const links = [
+const baseLinks = [
   { to: "/admin", label: "Dashboard", icon: BarChart3 },
   { to: "/admin/produtos", label: "Produtos", icon: Package },
   { to: "/admin/categorias", label: "Categorias", icon: Tags },
   { to: "/admin/config", label: "Configurações", icon: Settings },
 ] as const;
 
+const stockLink = { to: "/admin/estoque", label: "Estoque", icon: Boxes } as const;
+
 export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
   const navigate = useNavigate();
   const { data: isAdmin, isLoading } = useIsAdmin();
   const { data: company, isLoading: loadingCompany } = useMyCompany();
+  const links = company?.stockControlEnabled ? [...baseLinks, stockLink] : baseLinks;
 
   async function signOut() {
     await supabase.auth.signOut();

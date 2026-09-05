@@ -212,6 +212,11 @@ function MasterPage() {
                     />
                     {company.isActive ? "Ativa" : "Inativa"}
                   </label>
+                  {company.stockControlEnabled && (
+                    <span className="inline-flex h-11 items-center rounded-full bg-primary/10 px-3 text-xs font-semibold text-primary">
+                      Controle de estoque
+                    </span>
+                  )}
                   <Button
                     variant="outline"
                     className="h-11 rounded-full"
@@ -265,6 +270,7 @@ function CompanyDialog({
   const [secondaryColor, setSecondaryColor] = useState(DEFAULT_SECONDARY);
   const [backgroundColor, setBackgroundColor] = useState("");
   const [textColor, setTextColor] = useState("");
+  const [stockControlEnabled, setStockControlEnabled] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [key, setKey] = useState<string | null>(null);
@@ -279,6 +285,7 @@ function CompanyDialog({
     setSecondaryColor(editing?.secondaryColor ?? DEFAULT_SECONDARY);
     setBackgroundColor(editing?.backgroundColor ?? "");
     setTextColor(editing?.textColor ?? "");
+    setStockControlEnabled(editing?.stockControlEnabled ?? false);
     setIsActive(editing?.isActive ?? true);
     setLogoFile(null);
   }
@@ -306,6 +313,7 @@ function CompanyDialog({
                 secondaryColor,
                 backgroundColor,
                 textColor,
+                stockControlEnabled,
                 isActive,
                 logoFile,
               },
@@ -431,6 +439,16 @@ function CompanyDialog({
           <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
             <span className="text-sm font-medium">Empresa ativa</span>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
+          </label>
+
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Controle de estoque</p>
+              <p className="text-xs text-muted-foreground">
+                Libera a aba "Estoque" no admin desta empresa (inventário, baixas e logs).
+              </p>
+            </div>
+            <Switch checked={stockControlEnabled} onCheckedChange={setStockControlEnabled} />
           </label>
 
           <DialogFooter>

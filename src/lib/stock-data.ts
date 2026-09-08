@@ -331,6 +331,8 @@ export const STOCK_LOG_ACTION_LABEL: Record<string, string> = {
   operacao_aprovada: "Baixa aprovada",
   operacao_cancelada: "Baixa cancelada",
   alteracao_manual: "Estoque alterado manualmente",
+  pedido_falhou: "⚠️ Falha ao registrar pedido",
+  baixa_pendente_falhou: "⚠️ Falha ao registrar baixa de estoque",
 };
 
 export function useStockLogs() {

@@ -198,6 +198,24 @@ const orderSchema = z.object({
   deliveryAddress: z.string().trim().max(300).nullable(),
 });
 
+/**
+ * Registra na aba Estoque > Logs uma falha do checkout, para o lojista ver
+ * direto no admin (sem precisar de acesso aos logs internos do servidor).
+ * Só funciona (e só faz sentido) quando a empresa tem controle de estoque
+ * ligado — sem isso não existe aba Logs para ver o registro mesmo.
+ */
+async function logCheckoutFailure(
+  supabase: ReturnType<typeof createPublicClient>,
+  params: { companyId: string; action: string; details: string },
+) {
+  const { error } = await supabase.from("stock_logs").insert({
+    company_id: params.companyId,
+    action: params.action,
+    details: params.details,
+  });
+  if (error) console.error("logCheckoutFailure", error);
+}
+
 /** Registra a conversão no momento em que o cliente finaliza o pedido. */
 export const recordOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => orderSchema.parse(input))
@@ -244,6 +262,13 @@ export const recordOrder = createServerFn({ method: "POST" })
 
     if (error || !order) {
       console.error("recordOrder order", error);
+      if (company.stock_control_enabled) {
+        await logCheckoutFailure(supabase, {
+          companyId: company.id,
+          action: "pedido_falhou",
+          details: `Não foi possível registrar o pedido: ${error?.message ?? "erro desconhecido"}.`,
+        });
+      }
       return { ok: false as const };
     }
 
@@ -258,6 +283,13 @@ export const recordOrder = createServerFn({ method: "POST" })
 
     if (itemsError) {
       console.error("recordOrder items", itemsError);
+      if (company.stock_control_enabled) {
+        await logCheckoutFailure(supabase, {
+          companyId: company.id,
+          action: "pedido_falhou",
+          details: `Pedido criado, mas os itens não foram salvos: ${itemsError.message}.`,
+        });
+      }
       return { ok: false as const };
     }
 
@@ -281,6 +313,11 @@ export const recordOrder = createServerFn({ method: "POST" })
         if (stockError) {
           // Não falha o pedido por isso — o pedido em si já foi registrado.
           console.error("recordOrder stock_pending_operations", stockError);
+          await logCheckoutFailure(supabase, {
+            companyId: company.id,
+            action: "baixa_pendente_falhou",
+            details: `Pedido ${order.id} salvo, mas a baixa de estoque não foi registrada: ${stockError.message}.`,
+          });
         }
       }
     }

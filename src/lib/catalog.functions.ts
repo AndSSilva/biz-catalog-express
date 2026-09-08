@@ -247,30 +247,32 @@ export const recordOrder = createServerFn({ method: "POST" })
 
     const total = items.reduce((sum, item) => sum + item.quantity, 0);
 
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        total_items: total,
-        company_id: company.id,
-        customer_name: data.customerName,
-        customer_phone: data.customerPhone,
-        delivery_method: data.deliveryMethod,
-        delivery_address: data.deliveryMethod === "tele_entrega" ? data.deliveryAddress : null,
-      })
-      .select("id")
-      .single();
+    // O id é gerado aqui porque o catálogo público não tem permissão de leitura
+    // em pedidos — sem isso o insert com "select" volta erro de permissão.
+    const orderId = crypto.randomUUID();
 
-    if (error || !order) {
+    const { error } = await supabase.from("orders").insert({
+      id: orderId,
+      total_items: total,
+      company_id: company.id,
+      customer_name: data.customerName,
+      customer_phone: data.customerPhone,
+      delivery_method: data.deliveryMethod,
+      delivery_address: data.deliveryMethod === "tele_entrega" ? data.deliveryAddress : null,
+    });
+
+    if (error) {
       console.error("recordOrder order", error);
       if (company.stock_control_enabled) {
         await logCheckoutFailure(supabase, {
           companyId: company.id,
           action: "pedido_falhou",
-          details: `Não foi possível registrar o pedido: ${error?.message ?? "erro desconhecido"}.`,
+          details: `Não foi possível registrar o pedido: ${error.message}.`,
         });
       }
       return { ok: false as const };
     }
+
 
     const { error: itemsError } = await supabase.from("order_items").insert(
       items.map((item) => ({

@@ -276,7 +276,7 @@ export const recordOrder = createServerFn({ method: "POST" })
 
     const { error: itemsError } = await supabase.from("order_items").insert(
       items.map((item) => ({
-        order_id: order.id,
+        order_id: orderId,
         product_id: item.id,
         product_title: allowed.get(item.id)?.title ?? item.title,
         quantity: item.quantity,
@@ -306,7 +306,7 @@ export const recordOrder = createServerFn({ method: "POST" })
         const { error: stockError } = await supabase.from("stock_pending_operations").insert(
           stockItems.map((item) => ({
             company_id: company.id,
-            order_id: order.id,
+            order_id: orderId,
             product_id: item.id,
             product_title: allowed.get(item.id)?.title ?? item.title,
             quantity: item.quantity,
@@ -318,7 +318,7 @@ export const recordOrder = createServerFn({ method: "POST" })
           await logCheckoutFailure(supabase, {
             companyId: company.id,
             action: "baixa_pendente_falhou",
-            details: `Pedido ${order.id} salvo, mas a baixa de estoque não foi registrada: ${stockError.message}.`,
+            details: `Pedido ${orderId} salvo, mas a baixa de estoque não foi registrada: ${stockError.message}.`,
           });
         }
       }

@@ -134,6 +134,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         availability,
         stock_quantity: availability === "sob_encomenda" ? 0 : stockQuantity,
         show_stock_in_catalog: availability === "sob_encomenda" ? false : showStockInCatalog,
+        previousStockQuantity: product?.stock_quantity ?? null,
       });
       toast.success(product ? "Produto atualizado" : "Produto criado");
       void navigate({ to: "/admin/produtos" });

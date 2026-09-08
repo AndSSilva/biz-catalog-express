@@ -2,34 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useMyCompany } from "./admin-data";
+import { currentUserId, insertStockLog } from "./stock-log";
 
 function useCompanyScope() {
   const { data: company, isPending } = useMyCompany();
   return { companyId: company?.id ?? null, isPending };
-}
-
-async function insertStockLog(params: {
-  companyId: string;
-  actorId: string | null;
-  action: string;
-  productId?: string | null;
-  productTitle?: string | null;
-  details?: string | null;
-}) {
-  const { error } = await supabase.from("stock_logs").insert({
-    company_id: params.companyId,
-    actor_id: params.actorId,
-    action: params.action,
-    product_id: params.productId ?? null,
-    product_title: params.productTitle ?? null,
-    details: params.details ?? null,
-  });
-  if (error) console.error("insertStockLog", error);
-}
-
-async function currentUserId() {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
 }
 
 // ---------- Operação de estoque (baixas pendentes do checkout) ----------
@@ -353,6 +330,7 @@ export const STOCK_LOG_ACTION_LABEL: Record<string, string> = {
   inventario_finalizado: "Inventário finalizado",
   operacao_aprovada: "Baixa aprovada",
   operacao_cancelada: "Baixa cancelada",
+  alteracao_manual: "Estoque alterado manualmente",
 };
 
 export function useStockLogs() {

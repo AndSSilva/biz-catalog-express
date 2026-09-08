@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { currentUserId, insertStockLog } from "./stock-log";
 
 export type ProductAvailability = "pronta_entrega" | "sob_encomenda";
 
@@ -337,6 +338,7 @@ export function useInvalidateCatalog() {
 export function useSaveProduct() {
   const invalidate = useInvalidateCatalog();
   const companyId = useCompanyId();
+  const { data: myCompany } = useMyCompany();
 
   return useMutation({
     mutationFn: async (input: {
@@ -352,6 +354,7 @@ export function useSaveProduct() {
       availability: ProductAvailability;
       stock_quantity: number;
       show_stock_in_catalog: boolean;
+      previousStockQuantity?: number | null;
     }) => {
       const company = companyId();
       const coverImageUrl = input.images[0] ?? null;
@@ -377,6 +380,23 @@ export function useSaveProduct() {
           .eq("company_id", company);
         if (error) throw error;
         productId = input.id;
+
+        // Edição manual de produto que muda o estoque vira log, se a empresa
+        // tiver controle de estoque ligado (inventário/aprovação já logam por si).
+        if (
+          myCompany?.stockControlEnabled &&
+          input.previousStockQuantity != null &&
+          input.previousStockQuantity !== input.stock_quantity
+        ) {
+          await insertStockLog({
+            companyId: company,
+            actorId: await currentUserId(),
+            action: "alteracao_manual",
+            productId: input.id,
+            productTitle: input.title,
+            details: `De ${input.previousStockQuantity} para ${input.stock_quantity} unidade(s) (edição do produto).`,
+          });
+        }
       } else {
         const { data, error } = await supabase
           .from("products")

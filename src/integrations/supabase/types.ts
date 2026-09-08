@@ -209,6 +209,48 @@ export type Database = {
           },
         ]
       }
+      product_images: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          image_url: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           availability: Database["public"]["Enums"]["product_availability"]
@@ -278,41 +320,172 @@ export type Database = {
           },
         ]
       }
-      product_images: {
+      settings: {
         Row: {
           company_id: string
-          created_at: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          company_id: string
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          company_id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_inventory_count_items: {
+        Row: {
+          company_id: string
+          counted_at: string | null
+          counted_quantity: number | null
           id: string
-          image_url: string
-          product_id: string
+          inventory_count_id: string
+          previous_quantity: number
+          product_id: string | null
+          product_title: string
           sort_order: number
         }
         Insert: {
           company_id: string
-          created_at?: string
+          counted_at?: string | null
+          counted_quantity?: number | null
           id?: string
-          image_url: string
-          product_id: string
+          inventory_count_id: string
+          previous_quantity: number
+          product_id?: string | null
+          product_title: string
           sort_order?: number
         }
         Update: {
           company_id?: string
-          created_at?: string
+          counted_at?: string | null
+          counted_quantity?: number | null
           id?: string
-          image_url?: string
-          product_id?: string
+          inventory_count_id?: string
+          previous_quantity?: number
+          product_id?: string | null
+          product_title?: string
           sort_order?: number
         }
         Relationships: [
           {
-            foreignKeyName: "product_images_company_id_fkey"
+            foreignKeyName: "stock_inventory_count_items_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "product_images_product_id_fkey"
+            foreignKeyName: "stock_inventory_count_items_inventory_count_id_fkey"
+            columns: ["inventory_count_id"]
+            isOneToOne: false
+            referencedRelation: "stock_inventory_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventory_count_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_inventory_counts: {
+        Row: {
+          company_id: string
+          finished_at: string | null
+          finished_by: string | null
+          id: string
+          started_at: string
+          started_by: string | null
+          status: string
+        }
+        Insert: {
+          company_id: string
+          finished_at?: string | null
+          finished_by?: string | null
+          id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          finished_at?: string | null
+          finished_by?: string | null
+          id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_inventory_counts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          company_id: string
+          created_at: string
+          details: string | null
+          id: string
+          product_id: string | null
+          product_title: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          company_id: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          product_id?: string | null
+          product_title?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          company_id?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          product_id?: string | null
+          product_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_logs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -381,179 +554,6 @@ export type Database = {
           },
         ]
       }
-      stock_inventory_counts: {
-        Row: {
-          company_id: string
-          finished_at: string | null
-          finished_by: string | null
-          id: string
-          started_at: string
-          started_by: string | null
-          status: string
-        }
-        Insert: {
-          company_id: string
-          finished_at?: string | null
-          finished_by?: string | null
-          id?: string
-          started_at?: string
-          started_by?: string | null
-          status?: string
-        }
-        Update: {
-          company_id?: string
-          finished_at?: string | null
-          finished_by?: string | null
-          id?: string
-          started_at?: string
-          started_by?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stock_inventory_counts_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      stock_inventory_count_items: {
-        Row: {
-          company_id: string
-          counted_at: string | null
-          counted_quantity: number | null
-          id: string
-          inventory_count_id: string
-          previous_quantity: number
-          product_id: string | null
-          product_title: string
-          sort_order: number
-        }
-        Insert: {
-          company_id: string
-          counted_at?: string | null
-          counted_quantity?: number | null
-          id?: string
-          inventory_count_id: string
-          previous_quantity: number
-          product_id?: string | null
-          product_title: string
-          sort_order?: number
-        }
-        Update: {
-          company_id?: string
-          counted_at?: string | null
-          counted_quantity?: number | null
-          id?: string
-          inventory_count_id?: string
-          previous_quantity?: number
-          product_id?: string | null
-          product_title?: string
-          sort_order?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stock_inventory_count_items_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_inventory_count_items_inventory_count_id_fkey"
-            columns: ["inventory_count_id"]
-            isOneToOne: false
-            referencedRelation: "stock_inventory_counts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_inventory_count_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      stock_logs: {
-        Row: {
-          action: string
-          actor_id: string | null
-          company_id: string
-          created_at: string
-          details: string | null
-          id: string
-          product_id: string | null
-          product_title: string | null
-        }
-        Insert: {
-          action: string
-          actor_id?: string | null
-          company_id: string
-          created_at?: string
-          details?: string | null
-          id?: string
-          product_id?: string | null
-          product_title?: string | null
-        }
-        Update: {
-          action?: string
-          actor_id?: string | null
-          company_id?: string
-          created_at?: string
-          details?: string | null
-          id?: string
-          product_id?: string | null
-          product_title?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stock_logs_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_logs_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      settings: {
-        Row: {
-          company_id: string
-          key: string
-          updated_at: string
-          value: string
-        }
-        Insert: {
-          company_id: string
-          key: string
-          updated_at?: string
-          value?: string
-        }
-        Update: {
-          company_id?: string
-          key?: string
-          updated_at?: string
-          value?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "settings_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -607,12 +607,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -636,11 +636,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -661,11 +661,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -686,11 +686,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -703,11 +703,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

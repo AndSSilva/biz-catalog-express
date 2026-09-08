@@ -83,6 +83,12 @@ function CartPage() {
       deliveryAddress: info.deliveryAddress,
     };
 
+    // Registra o pedido antes de sair da página, senão a navegação para o
+    // WhatsApp cancela a requisição e a baixa de estoque nunca é criada.
+    void submitOrder({ data: payload }).catch((error) => {
+      console.error("recordOrder", error);
+    });
+
     // Abre o WhatsApp de forma sincrona (dentro do gesto do usuário),
     // senão o navegador bloqueia como popup.
     let opened: Window | null = null;
@@ -99,10 +105,6 @@ function CartPage() {
       }
     }
 
-    // Registra o pedido em background.
-    void submitOrder({ data: payload }).catch((error) => {
-      console.error("recordOrder", error);
-    });
 
     saveCheckoutInfo({ customerName: info.customerName, customerPhone: info.customerPhone });
     clearCart();

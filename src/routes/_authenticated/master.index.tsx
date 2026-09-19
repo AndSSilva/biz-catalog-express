@@ -195,7 +195,7 @@ function MasterPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-3 text-sm">
+                  <label className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border px-3 text-sm">
                     <Switch
                       checked={company.isActive}
                       onCheckedChange={(checked) =>

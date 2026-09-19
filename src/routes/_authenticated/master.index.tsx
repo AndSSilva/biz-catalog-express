@@ -212,11 +212,6 @@ function MasterPage() {
                     />
                     {company.isActive ? "Ativa" : "Inativa"}
                   </label>
-                  {company.stockControlEnabled && (
-                    <span className="inline-flex h-11 items-center rounded-full bg-primary/10 px-3 text-xs font-semibold text-primary">
-                      Controle de estoque
-                    </span>
-                  )}
                   <Button
                     variant="outline"
                     className="h-11 rounded-full"
@@ -240,6 +235,11 @@ function MasterPage() {
                     <Trash2 className="mr-1 h-4 w-4" aria-hidden />
                     Remover
                   </Button>
+                  {company.stockControlEnabled && (
+                    <span className="inline-flex h-11 items-center rounded-full bg-primary/10 px-3 text-xs font-semibold text-primary">
+                      Controle de estoque
+                    </span>
+                  )}
                 </div>
               </li>
             ))}

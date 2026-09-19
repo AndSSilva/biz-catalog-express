@@ -164,6 +164,11 @@ function MasterPage() {
                           Estoque
                         </span>
                       )}
+                      {company.sizeMeasurementEnabled && (
+                        <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-primary/10 px-2 text-[0.625rem] font-semibold text-primary">
+                          Medidas
+                        </span>
+                      )}
                     </div>
                     <p className="truncate text-xs text-muted-foreground">/{company.slug}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">

@@ -289,7 +289,7 @@ function CompanyDialog({
     setBackgroundColor(editing?.backgroundColor ?? "");
     setTextColor(editing?.textColor ?? "");
     setStockControlEnabled(editing?.stockControlEnabled ?? false);
-    setSizeMeasurementEnabled(false);
+    setSizeMeasurementEnabled(editing?.sizeMeasurementEnabled ?? false);
     setIsActive(editing?.isActive ?? true);
     setLogoFile(null);
   }
@@ -318,6 +318,7 @@ function CompanyDialog({
                 backgroundColor,
                 textColor,
                 stockControlEnabled,
+                sizeMeasurementEnabled,
                 isActive,
                 logoFile,
               },

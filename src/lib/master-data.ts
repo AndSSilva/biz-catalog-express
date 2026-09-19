@@ -32,6 +32,7 @@ export type CompanyInput = {
   backgroundColor: string;
   textColor: string;
   stockControlEnabled: boolean;
+  sizeMeasurementEnabled: boolean;
   isActive: boolean;
   logoFile?: File | null;
 };
@@ -65,6 +66,7 @@ export function useSaveCompany() {
           backgroundColor: input.backgroundColor,
           textColor: input.textColor,
           stockControlEnabled: input.stockControlEnabled,
+          sizeMeasurementEnabled: input.sizeMeasurementEnabled,
           isActive: input.isActive,
           logo,
         },

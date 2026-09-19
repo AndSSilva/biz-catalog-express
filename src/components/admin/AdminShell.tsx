@@ -1,14 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  BarChart3,
-  Boxes,
-  ExternalLink,
-  LogOut,
-  Package,
-  Ruler,
-  Settings,
-  Tags,
-} from "lucide-react";
+import { BarChart3, Boxes, ExternalLink, LogOut, Package, Settings, Tags } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -24,21 +15,12 @@ const baseLinks = [
 ] as const;
 
 const stockLink = { to: "/admin/estoque", label: "Estoque", icon: Boxes } as const;
-const measurementsLink = {
-  to: "/admin/medidas",
-  label: "Medidas e tamanhos",
-  icon: Ruler,
-} as const;
 
 export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
   const navigate = useNavigate();
   const { data: isAdmin, isLoading } = useIsAdmin();
   const { data: company, isLoading: loadingCompany } = useMyCompany();
-  const links = [
-    ...baseLinks,
-    ...(company?.stockControlEnabled ? [stockLink] : []),
-    ...(company?.sizeMeasurementEnabled ? [measurementsLink] : []),
-  ];
+  const links = company?.stockControlEnabled ? [...baseLinks, stockLink] : baseLinks;
 
   async function signOut() {
     await supabase.auth.signOut();

@@ -36,7 +36,6 @@ export type AdminCompany = {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
-  sizeMeasurementEnabled: boolean;
   backgroundColor: string;
   textColor: string;
   stockControlEnabled: boolean;
@@ -99,7 +98,7 @@ export function useMyCompany() {
       const { data: company, error } = await supabase
         .from("companies")
         .select(
-          "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color, stock_control_enabled, size_measurement_enabled, is_active",
+          "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color, stock_control_enabled, is_active",
         )
         .eq("id", member.company_id)
         .maybeSingle();
@@ -113,7 +112,6 @@ export function useMyCompany() {
         logoUrl: company.logo_url,
         primaryColor: company.primary_color,
         secondaryColor: company.secondary_color,
-        sizeMeasurementEnabled: company.size_measurement_enabled,
         backgroundColor: company.background_color,
         textColor: company.text_color,
         stockControlEnabled: company.stock_control_enabled,

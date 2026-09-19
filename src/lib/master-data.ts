@@ -29,7 +29,6 @@ export type CompanyInput = {
   slug: string;
   primaryColor: string;
   secondaryColor: string;
-  sizeMeasurementEnabled: boolean;
   backgroundColor: string;
   textColor: string;
   stockControlEnabled: boolean;
@@ -66,7 +65,6 @@ export function useSaveCompany() {
           backgroundColor: input.backgroundColor,
           textColor: input.textColor,
           stockControlEnabled: input.stockControlEnabled,
-          sizeMeasurementEnabled: input.sizeMeasurementEnabled,
           isActive: input.isActive,
           logo,
         },

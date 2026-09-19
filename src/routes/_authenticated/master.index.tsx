@@ -451,6 +451,16 @@ function CompanyDialog({
             <Switch checked={stockControlEnabled} onCheckedChange={setStockControlEnabled} />
           </label>
 
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Controle de medidas</p>
+              <p className="text-xs text-muted-foreground">
+                Funcionalidade disponível em breve para esta empresa.
+              </p>
+            </div>
+            <Switch checked={false} disabled aria-label="Controle de medidas indisponível" />
+          </label>
+
           <DialogFooter>
             <Button type="button" variant="ghost" className="h-12 rounded-full" onClick={onClose}>
               Cancelar

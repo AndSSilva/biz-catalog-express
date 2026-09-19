@@ -271,6 +271,7 @@ function CompanyDialog({
   const [backgroundColor, setBackgroundColor] = useState("");
   const [textColor, setTextColor] = useState("");
   const [stockControlEnabled, setStockControlEnabled] = useState(false);
+  const [sizeMeasurementEnabled, setSizeMeasurementEnabled] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [key, setKey] = useState<string | null>(null);
@@ -286,6 +287,7 @@ function CompanyDialog({
     setBackgroundColor(editing?.backgroundColor ?? "");
     setTextColor(editing?.textColor ?? "");
     setStockControlEnabled(editing?.stockControlEnabled ?? false);
+    setSizeMeasurementEnabled(false);
     setIsActive(editing?.isActive ?? true);
     setLogoFile(null);
   }
@@ -455,10 +457,10 @@ function CompanyDialog({
             <div className="min-w-0">
               <p className="text-sm font-medium">Controle de medidas</p>
               <p className="text-xs text-muted-foreground">
-                Funcionalidade disponível em breve para esta empresa.
+                Libera a aba "Medidas" no admin desta empresa.
               </p>
             </div>
-            <Switch checked={false} disabled aria-label="Controle de medidas indisponível" />
+            <Switch checked={sizeMeasurementEnabled} onCheckedChange={setSizeMeasurementEnabled} />
           </label>
 
           <DialogFooter>

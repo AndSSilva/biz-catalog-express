@@ -62,6 +62,7 @@ export type Database = {
           name: string
           primary_color: string
           secondary_color: string
+          size_measurement_enabled: boolean
           slug: string
           stock_control_enabled: boolean
           text_color: string
@@ -76,6 +77,7 @@ export type Database = {
           name: string
           primary_color?: string
           secondary_color?: string
+          size_measurement_enabled?: boolean
           slug: string
           stock_control_enabled?: boolean
           text_color?: string
@@ -90,6 +92,7 @@ export type Database = {
           name?: string
           primary_color?: string
           secondary_color?: string
+          size_measurement_enabled?: boolean
           slug?: string
           stock_control_enabled?: boolean
           text_color?: string

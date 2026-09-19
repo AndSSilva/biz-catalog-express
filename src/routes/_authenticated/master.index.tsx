@@ -217,6 +217,11 @@ function MasterPage() {
                       Controle de estoque
                     </span>
                   )}
+                  {company.sizeMeasurementEnabled && (
+                    <span className="inline-flex h-11 items-center rounded-full bg-primary/10 px-3 text-xs font-semibold text-primary">
+                      Medidas e tamanhos
+                    </span>
+                  )}
                   <Button
                     variant="outline"
                     className="h-11 rounded-full"
@@ -271,6 +276,7 @@ function CompanyDialog({
   const [backgroundColor, setBackgroundColor] = useState("");
   const [textColor, setTextColor] = useState("");
   const [stockControlEnabled, setStockControlEnabled] = useState(false);
+  const [sizeMeasurementEnabled, setSizeMeasurementEnabled] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [key, setKey] = useState<string | null>(null);
@@ -286,6 +292,7 @@ function CompanyDialog({
     setBackgroundColor(editing?.backgroundColor ?? "");
     setTextColor(editing?.textColor ?? "");
     setStockControlEnabled(editing?.stockControlEnabled ?? false);
+    setSizeMeasurementEnabled(editing?.sizeMeasurementEnabled ?? false);
     setIsActive(editing?.isActive ?? true);
     setLogoFile(null);
   }
@@ -314,6 +321,7 @@ function CompanyDialog({
                 backgroundColor,
                 textColor,
                 stockControlEnabled,
+                sizeMeasurementEnabled,
                 isActive,
                 logoFile,
               },
@@ -449,6 +457,19 @@ function CompanyDialog({
               </p>
             </div>
             <Switch checked={stockControlEnabled} onCheckedChange={setStockControlEnabled} />
+          </label>
+
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Cadastro de medidas e tamanhos</p>
+              <p className="text-xs text-muted-foreground">
+                Libera os futuros recursos de cadastro de medidas e tamanhos no admin desta empresa.
+              </p>
+            </div>
+            <Switch
+              checked={sizeMeasurementEnabled}
+              onCheckedChange={setSizeMeasurementEnabled}
+            />
           </label>
 
           <DialogFooter>

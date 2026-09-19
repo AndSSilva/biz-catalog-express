@@ -157,7 +157,14 @@ function MasterPage() {
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{company.name}</p>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <p className="truncate font-semibold">{company.name}</p>
+                      {company.stockControlEnabled && (
+                        <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-primary/10 px-2 text-[0.625rem] font-semibold text-primary">
+                          Estoque
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-xs text-muted-foreground">/{company.slug}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span
@@ -235,11 +242,6 @@ function MasterPage() {
                     <Trash2 className="mr-1 h-4 w-4" aria-hidden />
                     Remover
                   </Button>
-                  {company.stockControlEnabled && (
-                    <span className="inline-flex h-11 items-center rounded-full bg-primary/10 px-3 text-xs font-semibold text-primary">
-                      Controle de estoque
-                    </span>
-                  )}
                 </div>
               </li>
             ))}

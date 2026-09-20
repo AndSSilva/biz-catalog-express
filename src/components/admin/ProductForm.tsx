@@ -76,22 +76,48 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleUpload(file: File) {
+  async function handleUpload(fileList: FileList | File[]) {
     if (!company) {
       toast.error("Sua conta não está vinculada a nenhuma empresa.");
       return;
     }
-    if (images.length >= MAX_IMAGES) {
+    const files = Array.from(fileList);
+    if (files.length === 0) return;
+
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) {
       toast.error(`Máximo de ${MAX_IMAGES} fotos por produto.`);
       return;
     }
+    const toUpload = files.slice(0, remaining);
+    const skipped = files.length - toUpload.length;
+
     setUploading(true);
     try {
-      const url = await uploadProductImage(file, company.id);
-      setImages((current) => [...current, url]);
-      toast.success("Foto enviada");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Falha ao enviar a foto");
+      const results = await Promise.allSettled(
+        toUpload.map((file) => uploadProductImage(file, company.id)),
+      );
+      const uploaded = results
+        .filter((result): result is PromiseFulfilledResult<string> => result.status === "fulfilled")
+        .map((result) => result.value);
+      const failed = results.length - uploaded.length;
+
+      if (uploaded.length > 0) {
+        setImages((current) => [...current, ...uploaded]);
+      }
+      if (failed === 0 && skipped === 0) {
+        toast.success(uploaded.length === 1 ? "Foto enviada" : `${uploaded.length} fotos enviadas`);
+      } else {
+        if (uploaded.length > 0) {
+          toast.success(`${uploaded.length} de ${toUpload.length} fotos enviadas`);
+        }
+        if (failed > 0) {
+          toast.error(`${failed} foto(s) falharam ao enviar`);
+        }
+        if (skipped > 0) {
+          toast.error(`${skipped} foto(s) ignoradas — limite de ${MAX_IMAGES} por produto`);
+        }
+      }
     } finally {
       setUploading(false);
     }
@@ -270,11 +296,13 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
               id="photo"
               type="file"
               accept="image/*"
+              multiple
               className="sr-only"
               disabled={uploading || images.length >= MAX_IMAGES}
               onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void handleUpload(file);
+                if (event.target.files && event.target.files.length > 0) {
+                  void handleUpload(event.target.files);
+                }
                 event.target.value = "";
               }}
             />
@@ -287,7 +315,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
               disabled={uploading || images.length >= MAX_IMAGES}
               onChange={(event) => {
                 const file = event.target.files?.[0];
-                if (file) void handleUpload(file);
+                if (file) void handleUpload([file]);
                 event.target.value = "";
               }}
             />
@@ -315,10 +343,10 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {uploading
-                ? "Enviando foto..."
+                ? "Enviando fotos..."
                 : images.length >= MAX_IMAGES
                   ? `Limite de ${MAX_IMAGES} fotos atingido. Remova uma para adicionar outra.`
-                  : "Adicione quantas fotos quiser (até 6). A primeira é usada como capa nas listagens; o cliente vê todas no catálogo."}
+                  : "Selecione várias fotos de uma vez (até 6). A primeira é usada como capa nas listagens; o cliente vê todas no catálogo."}
             </p>
           </div>
         </div>

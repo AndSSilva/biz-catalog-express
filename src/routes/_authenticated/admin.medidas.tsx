@@ -1,16 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Plus, Ruler, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowDown, ArrowUp, Package, Plus, Ruler, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AdminShell } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useMyCompany } from "@/lib/admin-data";
+import { useAdminProducts, useMyCompany } from "@/lib/admin-data";
 import {
   useCompanyMeasurements,
   useDeleteCompanyMeasurement,
+  useMeasurementProductIds,
   useSaveCompanyMeasurement,
+  useSetMeasurementProducts,
   type CompanyMeasurement,
 } from "@/lib/measurement-data";
 
@@ -31,6 +42,7 @@ function MeasurementsPage() {
   const save = useSaveCompanyMeasurement();
   const remove = useDeleteCompanyMeasurement();
   const [label, setLabel] = useState("");
+  const [linking, setLinking] = useState<CompanyMeasurement | null>(null);
 
   async function addMeasurement(event: React.FormEvent) {
     event.preventDefault();
@@ -127,9 +139,21 @@ function MeasurementsPage() {
               {list.map((measurement, index) => (
                 <li
                   key={measurement.id}
-                  className="flex items-center gap-2 rounded-xl border border-border bg-card p-3"
+                  className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3"
                 >
-                  <span className="min-w-0 flex-1 font-medium">{measurement.label}</span>
+                  <span className="w-full font-medium sm:w-auto sm:flex-1">
+                    {measurement.label}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 rounded-full border-border bg-background text-foreground hover:bg-accent"
+                    onClick={() => setLinking(measurement)}
+                  >
+                    <Package className="mr-1.5 h-4 w-4" aria-hidden />
+                    Vincular produtos
+                  </Button>
                   <Button
                     type="button"
                     variant="ghost"
@@ -169,6 +193,120 @@ function MeasurementsPage() {
           )}
         </div>
       )}
+
+      <LinkProductsDialog measurement={linking} onClose={() => setLinking(null)} />
     </AdminShell>
+  );
+}
+
+function LinkProductsDialog({
+  measurement,
+  onClose,
+}: {
+  measurement: CompanyMeasurement | null;
+  onClose: () => void;
+}) {
+  const { data: products, isLoading: loadingProducts } = useAdminProducts();
+  const { data: linkedIds, isLoading: loadingLinks } = useMeasurementProductIds(
+    measurement?.id ?? null,
+  );
+  const setProducts = useSetMeasurementProducts();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setSelected(new Set(linkedIds ?? []));
+  }, [linkedIds, measurement?.id]);
+
+  useEffect(() => {
+    if (!measurement) setSearch("");
+  }, [measurement]);
+
+  const list = (products ?? []).filter((product) =>
+    product.title.toLowerCase().includes(search.trim().toLowerCase()),
+  );
+
+  function toggle(productId: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  }
+
+  async function handleSave() {
+    if (!measurement) return;
+    try {
+      await setProducts.mutateAsync({
+        measurementId: measurement.id,
+        productIds: Array.from(selected),
+      });
+      toast.success(`Produtos com "${measurement.label}" atualizados`);
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o vínculo");
+    }
+  }
+
+  const loading = loadingProducts || loadingLinks;
+
+  return (
+    <Dialog open={Boolean(measurement)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Vincular produtos a "{measurement?.label}"</DialogTitle>
+          <DialogDescription>
+            Marque todos os produtos que têm essa medida. Isso substitui a lista atual — produtos
+            desmarcados perdem essa medida específica (as outras medidas deles não mudam).
+          </DialogDescription>
+        </DialogHeader>
+
+        <Input
+          placeholder="Buscar produto..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="h-11 shrink-0"
+        />
+
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border">
+          {loading ? (
+            <p className="p-4 text-sm text-muted-foreground">Carregando produtos...</p>
+          ) : list.length === 0 ? (
+            <p className="p-4 text-sm text-muted-foreground">Nenhum produto encontrado.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {list.map((product) => (
+                <li key={product.id}>
+                  <label className="flex cursor-pointer items-center gap-3 p-3 hover:bg-accent">
+                    <Checkbox
+                      checked={selected.has(product.id)}
+                      onCheckedChange={() => toggle(product.id)}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm">{product.title}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <DialogFooter className="shrink-0">
+          <Button type="button" variant="ghost" className="h-11 rounded-full" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            className="h-11 rounded-full"
+            disabled={setProducts.isPending || loading}
+            onClick={() => void handleSave()}
+          >
+            {setProducts.isPending
+              ? "Salvando..."
+              : `Salvar (${selected.size} ${selected.size === 1 ? "produto" : "produtos"})`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

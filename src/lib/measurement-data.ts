@@ -56,6 +56,7 @@ function useInvalidateMeasurements() {
     void queryClient.invalidateQueries({ queryKey: ["admin-products"] });
     void queryClient.invalidateQueries({ queryKey: ["admin-product"] });
     void queryClient.invalidateQueries({ queryKey: ["product-measurements"] });
+    void queryClient.invalidateQueries({ queryKey: ["measurement-product-ids"] });
     void queryClient.invalidateQueries({ queryKey: ["catalog"] });
   };
 }
@@ -158,4 +159,52 @@ export async function replaceProductMeasurements(productId: string, measurementI
     })),
   );
   if (error) throw error;
+}
+
+/** Produtos que hoje têm essa medida vinculada (só os ids). */
+export function useMeasurementProductIds(measurementId: string | null) {
+  return useQuery({
+    queryKey: ["measurement-product-ids", measurementId],
+    enabled: Boolean(measurementId),
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await supabase
+        .from("product_measurements")
+        .select("product_id")
+        .eq("measurement_id", measurementId!);
+      if (error) throw error;
+      return (data ?? []).map((row) => row.product_id);
+    },
+  });
+}
+
+/**
+ * Define de uma vez, para UMA medida, a lista completa de produtos que devem
+ * tê-la. Apaga os vínculos antigos dessa medida (só dela, não mexe nas
+ * outras medidas desses produtos) e recria com a lista nova — é o que torna
+ * possível marcar vários produtos de uma vez em vez de abrir produto a
+ * produto.
+ */
+export function useSetMeasurementProducts() {
+  const invalidate = useInvalidateMeasurements();
+  return useMutation({
+    mutationFn: async (input: { measurementId: string; productIds: string[] }) => {
+      const { error: deleteError } = await supabase
+        .from("product_measurements")
+        .delete()
+        .eq("measurement_id", input.measurementId);
+      if (deleteError) throw deleteError;
+
+      if (input.productIds.length === 0) return;
+
+      const { error } = await supabase.from("product_measurements").insert(
+        input.productIds.map((productId, index) => ({
+          product_id: productId,
+          measurement_id: input.measurementId,
+          sort_order: index,
+        })),
+      );
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
 }

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useMyCompany } from "./admin-data";
 
 export type CompanyMeasurement = {
   id: string;
@@ -18,26 +19,20 @@ export type ProductMeasurement = {
   measurement: CompanyMeasurement;
 };
 
+/**
+ * Reaproveita useMyCompany (admin-data.ts) em vez de ter sua própria consulta
+ * com queryKey própria — as duas já chegaram a colidir sob a mesma chave
+ * "my-company" no cache do React Query (um lado guardando a empresa inteira,
+ * o outro esperando só o id), causando o id vir como objeto em vez de texto
+ * ao gravar no banco.
+ */
 function useCompanyId() {
-  return useQuery({
-    queryKey: ["my-company"],
-    queryFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return null;
-      const { data, error } = await supabase
-        .from("company_members")
-        .select("company_id")
-        .eq("user_id", userData.user.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.company_id ?? null;
-    },
-    staleTime: 60_000,
-  });
+  const { data: company } = useMyCompany();
+  return company?.id ?? null;
 }
 
 export function useCompanyMeasurements() {
-  const { data: companyId } = useCompanyId();
+  const companyId = useCompanyId();
   return useQuery({
     queryKey: ["company-measurements", companyId],
     enabled: Boolean(companyId),
@@ -66,7 +61,7 @@ function useInvalidateMeasurements() {
 }
 
 export function useSaveCompanyMeasurement() {
-  const { data: companyId } = useCompanyId();
+  const companyId = useCompanyId();
   const invalidate = useInvalidateMeasurements();
   return useMutation({
     mutationFn: async (input: { id?: string; label: string; sort_order: number }) => {
@@ -108,7 +103,7 @@ export function useSaveCompanyMeasurement() {
 }
 
 export function useDeleteCompanyMeasurement() {
-  const { data: companyId } = useCompanyId();
+  const companyId = useCompanyId();
   const invalidate = useInvalidateMeasurements();
   return useMutation({
     mutationFn: async (id: string) => {

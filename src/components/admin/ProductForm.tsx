@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Camera, ImagePlus, Sparkles, Upload, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,11 @@ import {
   type AdminProduct,
   type ProductAvailability,
 } from "@/lib/admin-data";
+import {
+  replaceProductMeasurements,
+  useCompanyMeasurements,
+  useProductMeasurements,
+} from "@/lib/measurement-data";
 import { AVAILABILITY_LABEL } from "@/lib/price";
 
 const MAX_IMAGES = 6;
@@ -35,6 +40,8 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const generate = useServerFn(generateProductCopy);
   const categories = useCategories();
   const { data: company } = useMyCompany();
+  const companyMeasurements = useCompanyMeasurements();
+  const { data: linkedMeasurementIds } = useProductMeasurements(product?.id);
 
   const [title, setTitle] = useState(product?.title ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
@@ -54,6 +61,15 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const [showStockInCatalog, setShowStockInCatalog] = useState(
     product?.show_stock_in_catalog ?? false,
   );
+  const [selectedMeasurementIds, setSelectedMeasurementIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (linkedMeasurementIds) setSelectedMeasurementIds(linkedMeasurementIds);
+  }, [linkedMeasurementIds]);
+  function toggleMeasurement(id: string) {
+    setSelectedMeasurementIds((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+    );
+  }
   const [brief, setBrief] = useState("");
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -121,7 +137,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
       return;
     }
     try {
-      await save.mutateAsync({
+      const productId = await save.mutateAsync({
         id: product?.id,
         title: title.trim(),
         description: description.trim(),
@@ -136,6 +152,9 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         show_stock_in_catalog: availability === "sob_encomenda" ? false : showStockInCatalog,
         previousStockQuantity: product?.stock_quantity ?? null,
       });
+      if (company?.sizeMeasurementEnabled) {
+        await replaceProductMeasurements(productId, selectedMeasurementIds);
+      }
       toast.success(product ? "Produto atualizado" : "Produto criado");
       void navigate({ to: "/admin/produtos" });
     } catch (error) {
@@ -418,6 +437,43 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           />
         </div>
       </div>
+
+      {company?.sizeMeasurementEnabled && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+          <div>
+            <p className="text-sm font-semibold">Medidas</p>
+            <p className="text-xs text-muted-foreground">
+              Selecione uma ou mais medidas disponíveis para este produto.
+            </p>
+          </div>
+          {(companyMeasurements.data ?? []).length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Nenhuma medida cadastrada ainda. Cadastre em Admin &gt; Medidas.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(companyMeasurements.data ?? []).map((measurement) => {
+                const active = selectedMeasurementIds.includes(measurement.id);
+                return (
+                  <button
+                    key={measurement.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => toggleMeasurement(measurement.id)}
+                    className={`min-h-10 rounded-full border px-4 text-sm font-semibold transition-colors ${
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {measurement.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4">
         <div className="min-w-0">

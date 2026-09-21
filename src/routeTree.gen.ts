@@ -19,6 +19,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
 import { Route as AuthenticatedAdminConfigRouteImport } from './routes/_authenticated/admin.config'
 import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
+import { Route as AuthenticatedAdminMedidasRouteImport } from './routes/_authenticated/admin.medidas'
 import { Route as AuthenticatedMasterIndexRouteImport } from './routes/_authenticated/master.index'
 import { Route as AuthenticatedAdminProdutosIndexRouteImport } from './routes/_authenticated/admin.produtos.index'
 import { Route as AuthenticatedAdminProdutosIdRouteImport } from './routes/_authenticated/admin.produtos.$id'
@@ -76,6 +77,12 @@ const AuthenticatedAdminEstoqueRoute =
     path: '/admin/estoque',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminMedidasRoute =
+  AuthenticatedAdminMedidasRouteImport.update({
+    id: '/admin/medidas',
+    path: '/admin/medidas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMasterIndexRoute =
   AuthenticatedMasterIndexRouteImport.update({
     id: '/master/',
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/config': typeof AuthenticatedAdminConfigRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/admin/medidas': typeof AuthenticatedAdminMedidasRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/master/': typeof AuthenticatedMasterIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -125,6 +133,7 @@ export interface FileRoutesByTo {
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/config': typeof AuthenticatedAdminConfigRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/admin/medidas': typeof AuthenticatedAdminMedidasRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/master': typeof AuthenticatedMasterIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -142,6 +151,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/_authenticated/admin/config': typeof AuthenticatedAdminConfigRoute
   '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/_authenticated/admin/medidas': typeof AuthenticatedAdminMedidasRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/master/': typeof AuthenticatedMasterIndexRoute
   '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/admin/categorias'
     | '/admin/config'
     | '/admin/estoque'
+    | '/admin/medidas'
     | '/admin/'
     | '/master/'
     | '/admin/produtos/$id'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/admin/categorias'
     | '/admin/config'
     | '/admin/estoque'
+    | '/admin/medidas'
     | '/admin'
     | '/master'
     | '/admin/produtos/$id'
@@ -190,6 +202,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/categorias'
     | '/_authenticated/admin/config'
     | '/_authenticated/admin/estoque'
+    | '/_authenticated/admin/medidas'
     | '/_authenticated/admin/'
     | '/_authenticated/master/'
     | '/_authenticated/admin/produtos/$id'
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEstoqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/medidas': {
+      id: '/_authenticated/admin/medidas'
+      path: '/admin/medidas'
+      fullPath: '/admin/medidas'
+      preLoaderRoute: typeof AuthenticatedAdminMedidasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/master/': {
       id: '/_authenticated/master/'
       path: '/master'
@@ -313,6 +333,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminCategoriasRoute: typeof AuthenticatedAdminCategoriasRoute
   AuthenticatedAdminConfigRoute: typeof AuthenticatedAdminConfigRoute
   AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
+  AuthenticatedAdminMedidasRoute: typeof AuthenticatedAdminMedidasRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedMasterIndexRoute: typeof AuthenticatedMasterIndexRoute
   AuthenticatedAdminProdutosIdRoute: typeof AuthenticatedAdminProdutosIdRoute
@@ -324,6 +345,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminCategoriasRoute: AuthenticatedAdminCategoriasRoute,
   AuthenticatedAdminConfigRoute: AuthenticatedAdminConfigRoute,
   AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
+  AuthenticatedAdminMedidasRoute: AuthenticatedAdminMedidasRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedMasterIndexRoute: AuthenticatedMasterIndexRoute,
   AuthenticatedAdminProdutosIdRoute: AuthenticatedAdminProdutosIdRoute,

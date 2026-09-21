@@ -153,7 +153,7 @@ function CartPage() {
             <ul className="flex flex-col gap-3">
               {items.map((item) => (
                 <li
-                  key={item.id}
+                  key={item.lineId}
                   className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3"
                 >
                   <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted">
@@ -169,13 +169,18 @@ function CartPage() {
 
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-sm font-semibold">{item.title}</p>
+                    {item.measurementLabel && (
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        Medida: <span className="font-semibold text-foreground">{item.measurementLabel}</span>
+                      </p>
+                    )}
                     <div className="mt-2 flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="icon"
                         className="h-10 w-10 rounded-full border-border bg-card text-foreground hover:bg-accent hover:text-foreground"
                         aria-label={`Diminuir quantidade de ${item.title}`}
-                        onClick={() => setQuantity(item.id, item.quantity - 1)}
+                        onClick={() => setQuantity(item.lineId, item.quantity - 1)}
                       >
                         <Minus className="h-4 w-4" aria-hidden />
                       </Button>
@@ -187,7 +192,7 @@ function CartPage() {
                         size="icon"
                         className="h-10 w-10 rounded-full border-border bg-card text-foreground hover:bg-accent hover:text-foreground"
                         aria-label={`Aumentar quantidade de ${item.title}`}
-                        onClick={() => setQuantity(item.id, item.quantity + 1)}
+                        onClick={() => setQuantity(item.lineId, item.quantity + 1)}
                       >
                         <Plus className="h-4 w-4" aria-hidden />
                       </Button>
@@ -200,7 +205,7 @@ function CartPage() {
                     className="h-10 w-10 shrink-0 rounded-full text-muted-foreground"
                     aria-label={`Remover ${item.title}`}
                     onClick={() => {
-                      removeFromCart(item.id);
+                      removeFromCart(item.lineId);
                       toast("Produto removido");
                     }}
                   >

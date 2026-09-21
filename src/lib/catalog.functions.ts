@@ -18,6 +18,12 @@ export type CatalogProduct = {
   availability: ProductAvailability;
   stock_quantity: number;
   show_stock_in_catalog: boolean;
+  measurements: CatalogMeasurement[];
+};
+
+export type CatalogMeasurement = {
+  id: string;
+  label: string;
 };
 
 export type CatalogCategory = {
@@ -44,6 +50,7 @@ export type CatalogCompany = {
   secondaryColor: string;
   backgroundColor: string;
   textColor: string;
+  sizeMeasurementEnabled: boolean;
 };
 
 const DEFAULT_SETTINGS: StoreSettings = {
@@ -67,7 +74,7 @@ export const getCatalog = createServerFn({ method: "GET" })
     const { data: company, error: companyError } = await supabase
       .from("companies")
       .select(
-        "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color",
+        "id, name, slug, logo_url, primary_color, secondary_color, background_color, text_color, size_measurement_enabled",
       )
       .eq("slug", data.slug)
       .eq("is_active", true)
@@ -105,12 +112,23 @@ export const getCatalog = createServerFn({ method: "GET" })
 
     const productIds = (productsResult.data ?? []).map((product) => product.id);
     const imagesByProduct = new Map<string, string[]>();
+    const measurementsByProduct = new Map<string, CatalogMeasurement[]>();
     if (productIds.length > 0) {
-      const { data: imageRows, error: imagesError } = await supabase
-        .from("product_images")
-        .select("product_id, image_url, sort_order")
-        .in("product_id", productIds)
-        .order("sort_order", { ascending: true });
+      const [imagesResult, measurementsResult] = await Promise.all([
+        supabase
+          .from("product_images")
+          .select("product_id, image_url, sort_order")
+          .in("product_id", productIds)
+          .order("sort_order", { ascending: true }),
+        company.size_measurement_enabled
+          ? supabase
+              .from("product_measurements")
+              .select("product_id, sort_order, company_measurements!inner(id, label)")
+              .in("product_id", productIds)
+              .order("sort_order", { ascending: true })
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      const { data: imageRows, error: imagesError } = imagesResult;
       if (imagesError) {
         console.error("getCatalog product_images", imagesError);
       } else {
@@ -118,6 +136,17 @@ export const getCatalog = createServerFn({ method: "GET" })
           const list = imagesByProduct.get(row.product_id) ?? [];
           list.push(row.image_url);
           imagesByProduct.set(row.product_id, list);
+        }
+      }
+      if (measurementsResult.error) {
+        console.error("getCatalog product_measurements", measurementsResult.error);
+      } else {
+        for (const row of measurementsResult.data ?? []) {
+          const measurement = row.company_measurements;
+          if (!measurement) continue;
+          const list = measurementsByProduct.get(row.product_id) ?? [];
+          list.push({ id: measurement.id, label: measurement.label });
+          measurementsByProduct.set(row.product_id, list);
         }
       }
     }
@@ -139,6 +168,7 @@ export const getCatalog = createServerFn({ method: "GET" })
         ...product,
         // Segurança extra para produtos antigos cuja galeria não tenha sido migrada.
         image_urls: imageUrls.length > 0 ? imageUrls : product.image_url ? [product.image_url] : [],
+        measurements: measurementsByProduct.get(product.id) ?? [],
       };
     });
 
@@ -152,6 +182,7 @@ export const getCatalog = createServerFn({ method: "GET" })
         secondaryColor: company.secondary_color,
         backgroundColor: company.background_color,
         textColor: company.text_color,
+        sizeMeasurementEnabled: company.size_measurement_enabled,
       } satisfies CatalogCompany,
       products,
       categories: (categoriesResult.data ?? []) as CatalogCategory[],

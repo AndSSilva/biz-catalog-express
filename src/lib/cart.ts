@@ -1,10 +1,13 @@
 import { useEffect, useSyncExternalStore } from "react";
 
 export type CartItem = {
+  lineId: string;
   id: string;
   title: string;
   imageUrl: string | null;
   quantity: number;
+  measurementId: string | null;
+  measurementLabel: string | null;
 };
 
 const PREFIX = "catalogo.cart.v2";
@@ -27,11 +30,25 @@ function read(slug: string): CartItem[] {
   try {
     const raw = localStorage.getItem(storageKey(slug));
     if (!raw) return EMPTY;
-    const parsed = JSON.parse(raw) as CartItem[];
+    const parsed = JSON.parse(raw) as Array<Partial<CartItem>>;
     if (!Array.isArray(parsed)) return EMPTY;
-    return parsed.filter(
-      (item) => item && typeof item.id === "string" && Number(item.quantity) > 0,
-    );
+    return parsed
+      .filter(
+        (item) =>
+          item &&
+          typeof item.id === "string" &&
+          typeof item.title === "string" &&
+          Number(item.quantity) > 0,
+      )
+      .map((item) => ({
+        lineId: item.lineId ?? `${item.id}:sem-medida`,
+        id: item.id ?? "",
+        title: item.title ?? "",
+        imageUrl: item.imageUrl ?? null,
+        quantity: Number(item.quantity),
+        measurementId: item.measurementId ?? null,
+        measurementLabel: item.measurementLabel ?? null,
+      }));
   } catch {
     return EMPTY;
   }
@@ -80,29 +97,38 @@ export function useCart(slug: string) {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-export function addToCart(product: { id: string; title: string; imageUrl: string | null }) {
-  const existing = items.find((item) => item.id === product.id);
+export function addToCart(product: {
+  id: string;
+  title: string;
+  imageUrl: string | null;
+  measurementId?: string | null;
+  measurementLabel?: string | null;
+}) {
+  const measurementId = product.measurementId ?? null;
+  const measurementLabel = product.measurementLabel ?? null;
+  const lineId = `${product.id}:${measurementId ?? "sem-medida"}`;
+  const existing = items.find((item) => item.lineId === lineId);
   if (existing) {
     commit(
       items.map((item) =>
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+        item.lineId === lineId ? { ...item, quantity: item.quantity + 1 } : item,
       ),
     );
     return;
   }
-  commit([...items, { ...product, quantity: 1 }]);
+  commit([...items, { ...product, lineId, measurementId, measurementLabel, quantity: 1 }]);
 }
 
-export function setQuantity(id: string, quantity: number) {
+export function setQuantity(lineId: string, quantity: number) {
   if (quantity <= 0) {
-    removeFromCart(id);
+    removeFromCart(lineId);
     return;
   }
-  commit(items.map((item) => (item.id === id ? { ...item, quantity } : item)));
+  commit(items.map((item) => (item.lineId === lineId ? { ...item, quantity } : item)));
 }
 
-export function removeFromCart(id: string) {
-  commit(items.filter((item) => item.id !== id));
+export function removeFromCart(lineId: string) {
+  commit(items.filter((item) => item.lineId !== lineId));
 }
 
 export function clearCart() {

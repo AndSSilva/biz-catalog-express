@@ -8,9 +8,10 @@ export type CheckoutInfo = {
 };
 
 export function buildOrderMessage(items: CartItem[], greeting: string, checkout: CheckoutInfo) {
-  const lines = items.map(
-    (item) => `• ${item.title} — ${item.quantity} ${item.quantity === 1 ? "unidade" : "unidades"}`,
-  );
+  const lines = items.map((item) => {
+    const measurement = item.measurementLabel ? ` — Medida: ${item.measurementLabel}` : "";
+    return `• ${item.title}${measurement} — ${item.quantity} ${item.quantity === 1 ? "unidade" : "unidades"}`;
+  });
 
   const deliveryLines: string[] = [];
   if (checkout.deliveryMethod === "retirada") {

@@ -7,11 +7,16 @@ import { toast } from "sonner";
 import { CartBar } from "@/components/catalog/CartBar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ProductDetailModal } from "@/components/catalog/ProductDetailModal";
+import { MeasurementDialog } from "@/components/catalog/MeasurementDialog";
 import { Button } from "@/components/ui/button";
 import { brandingStyle } from "@/lib/branding";
 import { addToCart, setQuantity, totalItems, useCart } from "@/lib/cart";
 import { catalogQueryOptions } from "@/lib/catalog-queries";
-import type { CatalogProduct, ProductAvailability } from "@/lib/catalog.functions";
+import type {
+  CatalogMeasurement,
+  CatalogProduct,
+  ProductAvailability,
+} from "@/lib/catalog.functions";
 import { AVAILABILITY_LABEL } from "@/lib/price";
 import { safeExternalUrl } from "@/lib/utils";
 
@@ -73,6 +78,7 @@ function CatalogPage() {
   const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [availability, setAvailability] = useState<ProductAvailability | "all">("all");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
+  const [measurementProduct, setMeasurementProduct] = useState<CatalogProduct | null>(null);
 
   const categories = data.categories ?? [];
   const storeMapsUrl = safeExternalUrl(data.settings.storeMapsUrl);
@@ -88,23 +94,42 @@ function CatalogPage() {
   );
   const filtersActive = categoryId !== "all" || onSaleOnly || availability !== "all";
 
-  const quantityOf = (id: string) => cart.find((item) => item.id === id)?.quantity ?? 0;
+  const quantityOf = (id: string) =>
+    cart.filter((item) => item.id === id).reduce((sum, item) => sum + item.quantity, 0);
+
+  const addProduct = (product: CatalogProduct, measurement?: CatalogMeasurement) => {
+    addToCart({
+      id: product.id,
+      title: product.title,
+      imageUrl: product.image_url,
+      measurementId: measurement?.id ?? null,
+      measurementLabel: measurement?.label ?? null,
+    });
+    toast.success(
+      measurement ? `${product.title} — medida ${measurement.label} adicionado` : "Adicionado ao carrinho",
+    );
+  };
+
+  const requestAdd = (product: CatalogProduct) => {
+    if (data.company.sizeMeasurementEnabled && product.measurements.length > 0) {
+      setMeasurementProduct(product);
+      return;
+    }
+    addProduct(product);
+  };
+
+  const decrementProduct = (product: CatalogProduct) => {
+    const line = [...cart].reverse().find((item) => item.id === product.id);
+    if (!line) return;
+    const next = line.quantity - 1;
+    setQuantity(line.lineId, next);
+    if (quantityOf(product.id) <= 1) toast("Produto removido do carrinho");
+  };
 
   const cartActions = (product: CatalogProduct) => ({
-    onAdd: () => {
-      addToCart({
-        id: product.id,
-        title: product.title,
-        imageUrl: product.image_url,
-      });
-      toast.success("Adicionado ao carrinho");
-    },
-    onIncrement: () => setQuantity(product.id, quantityOf(product.id) + 1),
-    onDecrement: () => {
-      const next = quantityOf(product.id) - 1;
-      setQuantity(product.id, next);
-      if (next <= 0) toast("Produto removido do carrinho");
-    },
+    onAdd: () => requestAdd(product),
+    onIncrement: () => requestAdd(product),
+    onDecrement: () => decrementProduct(product),
   });
 
   return (
@@ -273,6 +298,17 @@ function CatalogPage() {
           if (selectedProduct) {
             cartActions(selectedProduct).onDecrement();
           }
+        }}
+      />
+
+      <MeasurementDialog
+        product={measurementProduct}
+        open={!!measurementProduct}
+        onClose={() => setMeasurementProduct(null)}
+        onSelect={(measurement) => {
+          if (!measurementProduct) return;
+          addProduct(measurementProduct, measurement);
+          setMeasurementProduct(null);
         }}
       />
     </div>

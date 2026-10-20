@@ -662,6 +662,10 @@ export type Database = {
         Returns: boolean
       }
       is_master: { Args: { _user_id: string }; Returns: boolean }
+      reorder_products: {
+        Args: { _company_id: string; _ids: string[] }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "master"

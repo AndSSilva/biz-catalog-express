@@ -249,7 +249,7 @@ function ProductsPage() {
       </div>
 
       {editing && (
-        <section className="sticky top-[7.5rem] z-20 mb-4 rounded-2xl border-2 border-primary bg-card p-4 shadow-sm sm:top-[8.5rem]">
+        <section className="mb-4 rounded-2xl border-2 border-primary bg-card p-4 shadow-sm">
           <div className="flex items-center gap-2">
             <Wand2 className="h-4 w-4 text-primary" aria-hidden />
             <h2 className="text-sm font-bold">Ordenação automática</h2>

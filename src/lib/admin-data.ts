@@ -506,6 +506,22 @@ export function useReorderProducts() {
   });
 }
 
+/** Salva a sequência completa de uma vez (transação no banco). Erro "stale_sequence" = lista mudou. */
+export function useSaveProductSequence() {
+  const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.rpc("reorder_products", {
+        _company_id: companyId(),
+        _ids: ids,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
 /**
  * Envia a foto para o armazenamento e devolve uma URL de leitura de longa duração.
  * O arquivo fica na pasta da própria empresa (isolamento garantido pelo banco).

@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Product order is saved as a whole sequence via the reorder_products database function (one transaction, rejects stale lists); auto-sorting lives in src/lib/product-sort.ts and only prepares a temporary sequence.

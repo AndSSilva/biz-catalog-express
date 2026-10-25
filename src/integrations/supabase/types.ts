@@ -329,6 +329,7 @@ export type Database = {
         Row: {
           availability: Database["public"]["Enums"]["product_availability"]
           category_id: string | null
+          category_sort_order: number
           company_id: string
           created_at: string
           description: string
@@ -346,6 +347,7 @@ export type Database = {
         Insert: {
           availability?: Database["public"]["Enums"]["product_availability"]
           category_id?: string | null
+          category_sort_order?: number
           company_id: string
           created_at?: string
           description?: string
@@ -363,6 +365,7 @@ export type Database = {
         Update: {
           availability?: Database["public"]["Enums"]["product_availability"]
           category_id?: string | null
+          category_sort_order?: number
           company_id?: string
           created_at?: string
           description?: string
@@ -662,6 +665,10 @@ export type Database = {
         Returns: boolean
       }
       is_master: { Args: { _user_id: string }; Returns: boolean }
+      reorder_category_products: {
+        Args: { _category_id: string; _company_id: string; _ids: string[] }
+        Returns: undefined
+      }
       reorder_products: {
         Args: { _company_id: string; _ids: string[] }
         Returns: undefined

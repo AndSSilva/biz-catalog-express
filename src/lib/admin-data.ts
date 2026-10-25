@@ -493,14 +493,11 @@ export function useReorderProducts() {
   return useMutation({
     mutationFn: async (ordered: { id: string; sort_order: number }[]) => {
       const company = companyId();
-      for (const row of ordered) {
-        const { error } = await supabase
-          .from("products")
-          .update({ sort_order: row.sort_order })
-          .eq("id", row.id)
-          .eq("company_id", company);
-        if (error) throw error;
-      }
+      const { error } = await supabase.rpc("reorder_products", {
+        _company_id: company,
+        _ids: ordered.map((row) => row.id),
+      });
+      if (error) throw error;
     },
 
     onSuccess: invalidate,

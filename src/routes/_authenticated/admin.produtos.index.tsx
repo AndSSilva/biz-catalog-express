@@ -193,7 +193,7 @@ function ProductsPage() {
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!draft || !over || active.id === over.id) return;
+    if (!draft || saving || !over || active.id === over.id) return;
     const from = draft.findIndex((p) => p.id === active.id);
     const to = draft.findIndex((p) => p.id === over.id);
     moveDraft(from, to);
@@ -507,7 +507,7 @@ function ProductRow({
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging, isOver } =
-    useSortable({ id: product.id, disabled: !editing });
+    useSortable({ id: product.id, disabled: !editing || arrowsDisabled });
 
   return (
     <>

@@ -13,6 +13,7 @@ export type CatalogProduct = {
   image_url: string | null;
   image_urls: string[];
   category_id: string | null;
+  category_sort_order: number;
   price: number | null;
   on_sale: boolean;
   availability: ProductAvailability;
@@ -90,7 +91,7 @@ export const getCatalog = createServerFn({ method: "GET" })
       supabase
         .from("products")
         .select(
-          "id, title, description, image_url, category_id, price, on_sale, availability, stock_quantity, show_stock_in_catalog",
+          "id, title, description, image_url, category_id, category_sort_order, price, on_sale, availability, stock_quantity, show_stock_in_catalog",
         )
         .eq("company_id", company.id)
         .eq("is_active", true)

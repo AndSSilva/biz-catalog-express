@@ -44,7 +44,7 @@ function sortBy<T extends SortableProduct>(items: T[], criterion: SortCriterion)
     } else {
       r = compareName(a, b, criterion === "name_asc" ? 1 : -1);
     }
-    return r || index.get(a.id)! - index.get(b.id)!;
+    return r || (index.get(a.id) ?? 0) - (index.get(b.id) ?? 0);
   };
   return [...items].sort(cmp);
 }
@@ -77,4 +77,14 @@ export function buildSequence<T extends SortableProduct>(
 
 export function sameOrder(a: { id: string }[], b: { id: string }[]) {
   return a.length === b.length && a.every((item, i) => item.id === b[i]?.id);
+}
+
+/** Input is the complete general sequence; category sorting never mutates it. */
+export function scopedProductSequence<T extends { category_id: string | null; category_sort_order: number | null }>(
+  products: T[], categoryId: string | null,
+): T[] {
+  if (!categoryId) return [...products];
+  return products
+    .filter((product) => product.category_id === categoryId)
+    .sort((a, b) => (a.category_sort_order ?? Number.MAX_SAFE_INTEGER) - (b.category_sort_order ?? Number.MAX_SAFE_INTEGER));
 }

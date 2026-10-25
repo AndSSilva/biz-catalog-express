@@ -56,6 +56,7 @@ import {
   useDeleteProduct,
   useReorderProducts,
   useSaveProductSequence,
+  useSaveCategoryProductSequence,
   useToggleActive,
   type AdminProduct,
 } from "@/lib/admin-data";
@@ -64,6 +65,7 @@ import {
   UNCATEGORIZED,
   buildSequence,
   sameOrder,
+  scopedProductSequence,
   type PrimaryCriterion,
   type SortCriterion,
 } from "@/lib/product-sort";
@@ -76,6 +78,8 @@ export const Route = createFileRoute("/_authenticated/admin/produtos/")({
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Produtos do catálogo" },
       { property: "og:description", content: "Gerencie os produtos do catálogo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ProductsPage,
@@ -100,6 +104,7 @@ function ProductsPage() {
   const toggle = useToggleActive();
   const reorder = useReorderProducts();
   const saveSequence = useSaveProductSequence();
+  const saveCategorySequence = useSaveCategoryProductSequence();
   const remove = useDeleteProduct();
   const [pendingDelete, setPendingDelete] = useState<AdminProduct | null>(null);
 
@@ -111,6 +116,9 @@ function ProductsPage() {
   const [secondary, setSecondary] = useState<SortCriterion>("manual");
   const [confirmApply, setConfirmApply] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [scope, setScope] = useState("all");
+  const [pendingScope, setPendingScope] = useState<string | null>(null);
+  const saving = saveSequence.isPending || saveCategorySequence.isPending;
 
   const editing = draft !== null;
   const dirty = editing && !sameOrder(draft, original);
@@ -134,10 +142,12 @@ function ProductsPage() {
   const groupKey = (p: AdminProduct) =>
     p.category_id && categoryName.has(p.category_id) ? p.category_id : UNCATEGORIZED;
 
-  function startEditing() {
+  function startEditing(nextScope = "all") {
     if (!data) return;
-    setOriginal(data);
-    setDraft([...data]);
+    const sequence = scopedProductSequence(data, nextScope === "all" ? null : nextScope);
+    setScope(nextScope);
+    setOriginal(sequence);
+    setDraft(sequence);
     setManualEdited(false);
     setPrimary("manual");
     setSecondary("manual");
@@ -146,6 +156,13 @@ function ProductsPage() {
   function exitEditing() {
     setDraft(null);
     setManualEdited(false);
+    setPendingScope(null);
+  }
+
+  function changeScope(nextScope: string) {
+    if (nextScope === scope) return;
+    if (dirty) { setPendingScope(nextScope); setConfirmDiscard(true); }
+    else startEditing(nextScope);
   }
 
   function cancelEditing() {
@@ -185,7 +202,9 @@ function ProductsPage() {
   async function saveChanges() {
     if (!draft) return;
     try {
-      await saveSequence.mutateAsync(draft.map((p) => p.id));
+      const ids = draft.map((p) => p.id);
+      if (scope === "all") await saveSequence.mutateAsync(ids);
+      else await saveCategorySequence.mutateAsync({ categoryId: scope, ids });
       await refetch();
       exitEditing();
       toast.success("Nova ordem salva");
@@ -233,7 +252,7 @@ function ProductsPage() {
               variant="outline"
               className="h-11 rounded-full"
               disabled={!data || data.length < 2}
-              onClick={startEditing}
+              onClick={() => startEditing()}
             >
               <ListOrdered className="mr-1 h-4 w-4" aria-hidden />
               Reorganizar produtos
@@ -250,6 +269,16 @@ function ProductsPage() {
 
       {editing && (
         <section className="mb-4 rounded-2xl border-2 border-primary bg-card p-4 shadow-sm">
+          <label className="mb-4 flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            Ordenação em edição
+            <Select value={scope} onValueChange={changeScope} disabled={saving}>
+              <SelectTrigger className="h-11" aria-label="Ordenação em edição"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Vitrine geral</SelectItem>
+                {categories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </label>
           <div className="flex items-center gap-2">
             <Wand2 className="h-4 w-4 text-primary" aria-hidden />
             <h2 className="text-sm font-bold">Ordenação automática</h2>
@@ -262,12 +291,12 @@ function ProductsPage() {
           <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
               1º critério (principal)
-              <Select value={primary} onValueChange={(v) => setPrimary(v as PrimaryCriterion)}>
+              <Select value={primary} onValueChange={(v) => setPrimary(v as PrimaryCriterion)} disabled={saving}>
                 <SelectTrigger className="h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRIMARY_OPTIONS.map((o) => (
+                  {PRIMARY_OPTIONS.filter((o) => scope === "all" || o.value !== "category").map((o) => (
                     <SelectItem key={o.value} value={o.value}>
                       {o.label}
                     </SelectItem>
@@ -280,7 +309,7 @@ function ProductsPage() {
               <Select
                 value={primary === "category" ? secondary : "auto"}
                 onValueChange={(v) => setSecondary(v as SortCriterion)}
-                disabled={primary !== "category"}
+                disabled={primary !== "category" || saving}
               >
                 <SelectTrigger className="h-11">
                   <SelectValue />
@@ -299,7 +328,7 @@ function ProductsPage() {
                 </SelectContent>
               </Select>
             </label>
-            <Button variant="secondary" className="h-11 rounded-full" onClick={() => applySort()}>
+            <Button variant="secondary" className="h-11 rounded-full" onClick={() => applySort()} disabled={saving}>
               Aplicar ordenação
             </Button>
           </div>
@@ -311,16 +340,16 @@ function ProductsPage() {
               variant="outline"
               className="h-11 rounded-full"
               onClick={cancelEditing}
-              disabled={saveSequence.isPending}
+              disabled={saving}
             >
               Cancelar
             </Button>
             <Button
               className="h-11 rounded-full"
               onClick={() => void saveChanges()}
-              disabled={!dirty || saveSequence.isPending}
+              disabled={!dirty || saving}
             >
-              {saveSequence.isPending ? "Salvando..." : "Salvar alterações"}
+              {saving ? "Salvando..." : "Salvar alterações"}
             </Button>
           </div>
         </section>
@@ -328,6 +357,7 @@ function ProductsPage() {
 
       {isLoading && <p className="text-sm text-muted-foreground">Carregando produtos...</p>}
       {isError && <p className="text-sm text-destructive">Erro ao carregar os produtos.</p>}
+      {editing && list.length === 0 && <p className="py-6 text-sm text-muted-foreground">Nenhum produto nesta categoria.</p>}
 
       {data && data.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
@@ -355,9 +385,9 @@ function ProductsPage() {
                   total={list.length}
                   editing={editing}
                   groupHeader={header}
-                  arrowsDisabled={editing ? false : reorder.isPending}
+                  arrowsDisabled={editing ? saving : reorder.isPending}
                   onMove={(dir) =>
-                    editing ? moveDraft(index, index + dir) : void move(index, dir)
+                    editing ? (!saving && moveDraft(index, index + dir)) : void move(index, dir)
                   }
                   onToggle={(checked) =>
                     toggle.mutate(
@@ -398,6 +428,7 @@ function ProductsPage() {
         onOpenChange={(open) => {
           if (open) return;
           setConfirmDiscard(false);
+          setPendingScope(null);
           if (blocker.status === "blocked") blocker.reset();
         }}
       >
@@ -414,7 +445,8 @@ function ProductsPage() {
             <AlertDialogAction
               onClick={() => {
                 setConfirmDiscard(false);
-                exitEditing();
+                if (pendingScope !== null) { startEditing(pendingScope); setPendingScope(null); }
+                else exitEditing();
                 if (blocker.status === "blocked") blocker.proceed();
               }}
             >

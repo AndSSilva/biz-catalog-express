@@ -18,6 +18,7 @@ import type {
   ProductAvailability,
 } from "@/lib/catalog.functions";
 import { AVAILABILITY_LABEL } from "@/lib/price";
+import { scopedProductSequence } from "@/lib/product-sort";
 import { safeExternalUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/$slug/")({
@@ -34,6 +35,8 @@ export const Route = createFileRoute("/$slug/")({
         { name: "description", content: tagline },
         { property: "og:title", content: title },
         { property: "og:description", content: tagline },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: tagline },
       ],
@@ -84,8 +87,7 @@ function CatalogPage() {
   const storeMapsUrl = safeExternalUrl(data.settings.storeMapsUrl);
   const visibleProducts = useMemo(
     () =>
-      data.products.filter((product) => {
-        if (categoryId !== "all" && product.category_id !== categoryId) return false;
+      scopedProductSequence(data.products, categoryId === "all" ? null : categoryId).filter((product) => {
         if (onSaleOnly && !product.on_sale) return false;
         if (availability !== "all" && product.availability !== availability) return false;
         return true;

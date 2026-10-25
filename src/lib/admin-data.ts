@@ -13,6 +13,7 @@ export type AdminProduct = {
   images: string[];
   is_active: boolean;
   sort_order: number;
+  category_sort_order: number;
   category_id: string | null;
   price: number | null;
   on_sale: boolean;
@@ -157,7 +158,7 @@ export function useAdminProducts() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, stock_quantity, show_stock_in_catalog, categories(id, name), product_images(image_url, sort_order)",
+          "id, title, description, image_url, is_active, sort_order, category_sort_order, category_id, price, on_sale, availability, stock_quantity, show_stock_in_catalog, categories(id, name), product_images(image_url, sort_order)",
         )
         .eq("company_id", companyId!)
         .order("sort_order", { ascending: true })
@@ -180,7 +181,7 @@ export function useAdminProduct(id: string) {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, title, description, image_url, is_active, sort_order, category_id, price, on_sale, availability, stock_quantity, show_stock_in_catalog, categories(id, name), product_images(image_url, sort_order)",
+          "id, title, description, image_url, is_active, sort_order, category_sort_order, category_id, price, on_sale, availability, stock_quantity, show_stock_in_catalog, categories(id, name), product_images(image_url, sort_order)",
         )
         .eq("id", id)
         .eq("company_id", companyId!)
@@ -492,14 +493,11 @@ export function useReorderProducts() {
   return useMutation({
     mutationFn: async (ordered: { id: string; sort_order: number }[]) => {
       const company = companyId();
-      for (const row of ordered) {
-        const { error } = await supabase
-          .from("products")
-          .update({ sort_order: row.sort_order })
-          .eq("id", row.id)
-          .eq("company_id", company);
-        if (error) throw error;
-      }
+      const { error } = await supabase.rpc("reorder_products", {
+        _company_id: company,
+        _ids: ordered.map((row) => row.id),
+      });
+      if (error) throw error;
     },
 
     onSuccess: invalidate,
@@ -515,6 +513,20 @@ export function useSaveProductSequence() {
       const { error } = await supabase.rpc("reorder_products", {
         _company_id: companyId(),
         _ids: ids,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useSaveCategoryProductSequence() {
+  const invalidate = useInvalidateCatalog();
+  const companyId = useCompanyId();
+  return useMutation({
+    mutationFn: async ({ categoryId, ids }: { categoryId: string; ids: string[] }) => {
+      const { error } = await supabase.rpc("reorder_category_products", {
+        _company_id: companyId(), _category_id: categoryId, _ids: ids,
       });
       if (error) throw error;
     },

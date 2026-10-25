@@ -34,6 +34,8 @@ export const Route = createFileRoute("/$slug/carrinho")({
       "Confira os produtos escolhidos, ajuste as quantidades e finalize o pedido pelo WhatsApp.";
     return {
       meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
         { title },
         { name: "description", content: description },
         { property: "og:title", content: title },

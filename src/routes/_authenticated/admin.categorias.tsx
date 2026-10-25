@@ -35,6 +35,8 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/categorias")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Categorias — Catálogo" },
       { name: "description", content: "Crie, edite e exclua as categorias dos produtos." },
       { name: "robots", content: "noindex" },

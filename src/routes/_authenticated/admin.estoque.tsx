@@ -25,6 +25,10 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/estoque")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:title", content: "Estoque — Catálogo" },
+      { property: "og:description", content: "Inventário, baixas de estoque e histórico de alterações." },
       { title: "Estoque — Catálogo" },
       { name: "description", content: "Inventário, baixas de estoque e histórico de alterações." },
       { name: "robots", content: "noindex" },

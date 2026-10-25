@@ -31,6 +31,8 @@ import type { MasterCompany } from "@/lib/master.functions";
 export const Route = createFileRoute("/_authenticated/master/")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Empresas da plataforma" },
       { name: "description", content: "Gestão interna das empresas da plataforma." },
       { name: "robots", content: "noindex, nofollow" },

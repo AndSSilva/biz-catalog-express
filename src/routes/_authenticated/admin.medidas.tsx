@@ -28,6 +28,10 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/medidas")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:title", content: "Medidas — Catálogo" },
+      { property: "og:description", content: "Cadastro de medidas e tamanhos da empresa." },
       { title: "Medidas — Catálogo" },
       { name: "description", content: "Cadastro de medidas e tamanhos da empresa." },
       { name: "robots", content: "noindex" },

@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/admin/login")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Acesso do administrador — Catálogo" },
       { name: "description", content: "Área restrita para gerenciar produtos e pedidos." },
       { name: "robots", content: "noindex" },

@@ -6,6 +6,8 @@ import { useDashboard } from "@/lib/admin-data";
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Dashboard — Catálogo" },
       { name: "description", content: "Resumo de pedidos iniciados e produtos mais selecionados." },
       { name: "robots", content: "noindex" },

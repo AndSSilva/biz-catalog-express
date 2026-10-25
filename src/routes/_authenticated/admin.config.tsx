@@ -14,6 +14,8 @@ import { normalizeWhatsappNumber } from "@/lib/whatsapp";
 export const Route = createFileRoute("/_authenticated/admin/config")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Configurações — Catálogo" },
       { name: "description", content: "Número de WhatsApp e identidade do catálogo." },
       { name: "robots", content: "noindex" },

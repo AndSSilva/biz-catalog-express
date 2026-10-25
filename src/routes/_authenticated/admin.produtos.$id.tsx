@@ -7,6 +7,8 @@ import { useAdminProduct } from "@/lib/admin-data";
 export const Route = createFileRoute("/_authenticated/admin/produtos/$id")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Editar produto — Catálogo" },
       { name: "description", content: "Edite as informações do produto." },
       { name: "robots", content: "noindex" },

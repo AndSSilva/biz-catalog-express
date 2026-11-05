@@ -284,12 +284,12 @@ export function useFinishInventoryCount() {
       if (itemsError) throw itemsError;
       if (!items || items.length === 0) throw new Error("Essa contagem não tem itens.");
 
-      const missing = items.filter((item) => item.counted_quantity === null);
-      if (missing.length > 0) {
-        throw new Error(`Ainda faltam ${missing.length} item(ns) sem contagem informada.`);
-      }
-
-      const changed = items.filter((item) => item.counted_quantity !== item.previous_quantity);
+      // Itens não conferidos (counted_quantity nulo) mantêm o estoque atual; só os conferidos atualizam.
+      const notChecked = items.filter((item) => item.counted_quantity === null).length;
+      const changed = items.filter(
+        (item) =>
+          item.counted_quantity !== null && item.counted_quantity !== item.previous_quantity,
+      );
 
       for (const item of changed) {
         if (!item.product_id) continue;
@@ -325,7 +325,11 @@ export function useFinishInventoryCount() {
         companyId: company,
         actorId: userId,
         action: "inventario_finalizado",
-        details: `Contagem finalizada: ${changed.length} de ${items.length} produto(s) tiveram o estoque atualizado.`,
+        details:
+          `Contagem finalizada: ${changed.length} de ${items.length} produto(s) tiveram o estoque atualizado.` +
+          (notChecked > 0
+            ? ` ${notChecked} item(ns) não conferido(s) mantiveram o estoque atual.`
+            : ""),
       });
     },
     onSuccess: (_data, inventoryCountId) => {

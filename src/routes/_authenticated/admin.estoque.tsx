@@ -270,6 +270,7 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
   const cancel = useCancelInventoryCount();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   // Campos em que a pessoa digitou algo (mesmo igual ao estoque atual): sair do campo confirma.
+  const [confirmFinishOpen, setConfirmFinishOpen] = useState(false);
   const touched = useRef<Set<string>>(new Set());
 
   async function commit(item: InventoryCountItem, rawValue: string) {
@@ -372,14 +373,32 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
             </AlertDialog>
             <Button
               className="h-11 rounded-full"
-              disabled={!allCounted || finish.isPending || cancel.isPending}
-              onClick={handleFinish}
+              disabled={total === 0 || finish.isPending || cancel.isPending}
+              onClick={() => (allCounted ? void handleFinish() : setConfirmFinishOpen(true))}
             >
               {finish.isPending ? "Finalizando..." : "Finalizar inventário"}
             </Button>
           </div>
         </div>
       </div>
+
+      <AlertDialog open={confirmFinishOpen} onOpenChange={setConfirmFinishOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar sem conferir todos os itens?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pending} de {total} item(ns) ainda não foram conferidos e vão manter o estoque atual.
+              Os {checked} item(ns) conferidos serão atualizados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar ao inventário</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleFinish()}>
+              Finalizar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando itens...</p>

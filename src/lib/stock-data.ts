@@ -313,6 +313,44 @@ export function useFinishInventoryCount() {
   });
 }
 
+export function useCancelInventoryCount() {
+  const { companyId } = useCompanyScope();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (inventoryCountId: string) => {
+      const company = companyId;
+      if (!company) throw new Error("Sua conta não está vinculada a nenhuma empresa.");
+      const userId = await currentUserId();
+
+      // Só cancela contagem em andamento; os itens saem em cascata e o estoque não é alterado.
+      const { data, error } = await supabase
+        .from("stock_inventory_counts")
+        .delete()
+        .eq("id", inventoryCountId)
+        .eq("company_id", company)
+        .eq("status", "em_andamento")
+        .select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Essa contagem não está mais em andamento.");
+      }
+
+      await insertStockLog({
+        companyId: company,
+        actorId: userId,
+        action: "inventario_cancelado",
+        details: "Contagem cancelada; o estoque não foi alterado.",
+      });
+    },
+    onSuccess: (_data, inventoryCountId) => {
+      void queryClient.invalidateQueries({ queryKey: ["inventory-counts"] });
+      void queryClient.removeQueries({ queryKey: ["inventory-count-items", inventoryCountId] });
+      void queryClient.invalidateQueries({ queryKey: ["stock-logs"] });
+    },
+  });
+}
+
 // ---------- Logs ----------
 
 export type StockLog = {
@@ -328,6 +366,7 @@ export const STOCK_LOG_ACTION_LABEL: Record<string, string> = {
   inventario_iniciado: "Inventário iniciado",
   inventario_contagem: "Item contado",
   inventario_finalizado: "Inventário finalizado",
+  inventario_cancelado: "Inventário cancelado",
   operacao_aprovada: "Baixa aprovada",
   operacao_cancelada: "Baixa cancelada",
   alteracao_manual: "Estoque alterado manualmente",

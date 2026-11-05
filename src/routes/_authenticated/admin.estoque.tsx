@@ -4,12 +4,24 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMyCompany } from "@/lib/admin-data";
 import {
   STOCK_LOG_ACTION_LABEL,
+  useCancelInventoryCount,
   useFinishInventoryCount,
   useInventoryCountItems,
   useInventoryCounts,
@@ -162,6 +174,7 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
   const { data: items, isLoading } = useInventoryCountItems(countId);
   const saveItem = useSaveInventoryCountItem();
   const finish = useFinishInventoryCount();
+  const cancel = useCancelInventoryCount();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   async function commit(item: InventoryCountItem, rawValue: string) {
@@ -202,6 +215,15 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
     }
   }
 
+  async function handleCancel() {
+    try {
+      await cancel.mutateAsync(countId);
+      toast.success("Contagem cancelada — o estoque não foi alterado");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível cancelar a contagem");
+    }
+  }
+
   const pending = (items ?? []).filter((item) => item.counted_quantity === null).length;
   const allCounted = (items ?? []).length > 0 && pending === 0;
 
@@ -216,13 +238,41 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
               {pending > 0 ? `${pending} item(ns) sem contagem` : "todos os itens contados"}
             </p>
           </div>
-          <Button
-            className="h-11 rounded-full"
-            disabled={!allCounted || finish.isPending}
-            onClick={handleFinish}
-          >
-            {finish.isPending ? "Finalizando..." : "Finalizar inventário"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-11 rounded-full"
+                  disabled={cancel.isPending || finish.isPending}
+                >
+                  {cancel.isPending ? "Cancelando..." : "Cancelar contagem"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancelar esta contagem?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    As quantidades já digitadas serão descartadas. O estoque dos produtos não será
+                    alterado.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Continuar contando</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => void handleCancel()}>
+                    Cancelar contagem
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button
+              className="h-11 rounded-full"
+              disabled={!allCounted || finish.isPending || cancel.isPending}
+              onClick={handleFinish}
+            >
+              {finish.isPending ? "Finalizando..." : "Finalizar inventário"}
+            </Button>
+          </div>
         </div>
       </div>
 

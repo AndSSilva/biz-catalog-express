@@ -320,14 +320,23 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
   }
 
   const pending = (items ?? []).filter((item) => item.counted_quantity === null).length;
-  const allCounted = (items ?? []).length > 0 && pending === 0;
+  const total = (items ?? []).length;
+  const checked = total - pending;
+  const allCounted = total > 0 && pending === 0;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold">Contagem em andamento</h2>
+            <h2 className="text-sm font-semibold">
+              Contagem em andamento
+              {!isLoading && total > 0 && (
+                <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums">
+                  {checked}/{total}
+                </span>
+              )}
+            </h2>
             <p className="text-xs text-muted-foreground">
               Iniciada em {formatDateTime(startedAt)} ·{" "}
               {pending > 0 ? `${pending} item(ns) sem contagem` : "todos os itens contados"}

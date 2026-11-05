@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, CheckCircle2, History, ListChecks, PackageSearch, XCircle } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -17,8 +17,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMyCompany } from "@/lib/admin-data";
+import { useCategories, useMyCompany } from "@/lib/admin-data";
 import {
   STOCK_LOG_ACTION_LABEL,
   useCancelInventoryCount,
@@ -31,6 +39,7 @@ import {
   useStockLogs,
   useStockPendingOperations,
   type InventoryCountItem,
+  type InventoryOrder,
   type StockPendingOperation,
 } from "@/lib/stock-data";
 
@@ -40,7 +49,10 @@ export const Route = createFileRoute("/_authenticated/admin/estoque")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { property: "og:title", content: "Estoque — Catálogo" },
-      { property: "og:description", content: "Inventário, baixas de estoque e histórico de alterações." },
+      {
+        property: "og:description",
+        content: "Inventário, baixas de estoque e histórico de alterações.",
+      },
       { title: "Estoque — Catálogo" },
       { name: "description", content: "Inventário, baixas de estoque e histórico de alterações." },
       { name: "robots", content: "noindex" },
@@ -116,13 +128,16 @@ function StockPage() {
 function InventoryTab() {
   const { data: counts, isLoading, isError } = useInventoryCounts();
   const start = useStartInventoryCount();
+  const { data: categories } = useCategories();
+  const [order, setOrder] = useState<InventoryOrder>("apresentacao");
+  const [categoryId, setCategoryId] = useState<string>("todos");
 
   const activeCount = counts?.find((count) => count.status === "em_andamento") ?? null;
   const history = (counts ?? []).filter((count) => count.status === "finalizado");
 
   async function handleStart() {
     try {
-      await start.mutateAsync();
+      await start.mutateAsync({ order, categoryId: categoryId === "todos" ? null : categoryId });
       toast.success("Contagem iniciada");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a contagem");
@@ -144,7 +159,37 @@ function InventoryTab() {
           Lista todos os produtos de pronta entrega com o estoque atual, para você conferir um a um
           e informar a quantidade real.
         </p>
-        <Button className="mt-3 h-11 rounded-full" disabled={start.isPending} onClick={handleStart}>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="inventory-category">Produtos</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger id="inventory-category" className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                {(categories ?? []).map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="inventory-order">Ordem da lista</Label>
+            <Select value={order} onValueChange={(value) => setOrder(value as InventoryOrder)}>
+              <SelectTrigger id="inventory-order" className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="apresentacao">Ordem de apresentação</SelectItem>
+                <SelectItem value="alfabetica">Ordem alfabética</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <Button className="mt-4 h-11 rounded-full" disabled={start.isPending} onClick={handleStart}>
           {start.isPending ? "Iniciando..." : "Iniciar contagem"}
         </Button>
       </div>
@@ -170,6 +215,20 @@ function InventoryTab() {
   );
 }
 
+/** Amarelo = ainda não conferido; vermelho = menor; verde = maior; branco = igual ao estoque atual. */
+function countedFieldClass(item: InventoryCountItem): string {
+  if (item.counted_quantity === null) {
+    return "border-yellow-400 bg-yellow-100 text-yellow-950 dark:border-yellow-500 dark:bg-yellow-500/20 dark:text-yellow-100";
+  }
+  if (item.counted_quantity < item.previous_quantity) {
+    return "border-red-400 bg-red-100 text-red-950 dark:border-red-500 dark:bg-red-500/20 dark:text-red-100";
+  }
+  if (item.counted_quantity > item.previous_quantity) {
+    return "border-green-400 bg-green-100 text-green-950 dark:border-green-500 dark:bg-green-500/20 dark:text-green-100";
+  }
+  return "bg-background";
+}
+
 function InventoryCountRunner({ countId, startedAt }: { countId: string; startedAt: string }) {
   const { data: items, isLoading } = useInventoryCountItems(countId);
   const saveItem = useSaveInventoryCountItem();
@@ -177,9 +236,11 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
   const cancel = useCancelInventoryCount();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  async function commit(item: InventoryCountItem, rawValue: string) {
+  async function commit(item: InventoryCountItem, rawValue: string, onlyIfChanged = false) {
     const trimmed = rawValue.trim();
     if (trimmed === "") return;
+    if (onlyIfChanged && Number(trimmed) === (item.counted_quantity ?? item.previous_quantity))
+      return;
     const parsed = Number(trimmed);
     if (!Number.isFinite(parsed) || parsed < 0) {
       toast.error("Informe uma quantidade válida (0 ou mais)");
@@ -301,14 +362,14 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
                 inputMode="numeric"
                 min={0}
                 placeholder="Nova qtd."
-                defaultValue={item.counted_quantity ?? ""}
-                className="h-11 w-24 text-center"
+                defaultValue={item.counted_quantity ?? item.previous_quantity}
+                className={`h-11 w-24 text-center ${countedFieldClass(item)}`}
                 onKeyDown={(event) => {
                   if (event.key !== "Enter") return;
                   event.preventDefault();
                   void commit(item, event.currentTarget.value).then(() => focusNext(index));
                 }}
-                onBlur={(event) => void commit(item, event.currentTarget.value)}
+                onBlur={(event) => void commit(item, event.currentTarget.value, true)}
               />
             </div>
           ))}

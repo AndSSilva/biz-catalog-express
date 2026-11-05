@@ -160,28 +160,52 @@ export function useInventoryCountItems(inventoryCountId: string | null) {
   });
 }
 
+export type InventoryOrder = "apresentacao" | "alfabetica";
+
+export type StartInventoryInput = {
+  order: InventoryOrder;
+  /** null = todos os produtos; senão, só os dessa categoria. */
+  categoryId: string | null;
+};
+
 export function useStartInventoryCount() {
   const { companyId } = useCompanyScope();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (): Promise<string> => {
+    mutationFn: async ({ order, categoryId }: StartInventoryInput): Promise<string> => {
       const company = companyId;
       if (!company) throw new Error("Sua conta não está vinculada a nenhuma empresa.");
       const userId = await currentUserId();
 
       // Só produtos de "pronta entrega" controlam estoque (sob encomenda fica sempre em 0).
-      const { data: products, error: productsError } = await supabase
+      let productsQuery = supabase
         .from("products")
         .select("id, title, stock_quantity")
         .eq("company_id", company)
-        .eq("availability", "pronta_entrega")
-        .order("sort_order", { ascending: true })
-        .order("title", { ascending: true });
+        .eq("availability", "pronta_entrega");
+      if (categoryId) productsQuery = productsQuery.eq("category_id", categoryId);
+      // Ordem de apresentação: por categoria usa a sequência da categoria; "todos" usa a geral.
+      productsQuery = categoryId
+        ? productsQuery.order("category_sort_order", { ascending: true })
+        : productsQuery.order("sort_order", { ascending: true });
+      const { data: fetched, error: productsError } = await productsQuery.order("title", {
+        ascending: true,
+      });
       if (productsError) throw productsError;
-      if (!products || products.length === 0) {
-        throw new Error("Nenhum produto de pronta entrega cadastrado para contar.");
+      if (!fetched || fetched.length === 0) {
+        throw new Error(
+          categoryId
+            ? "Nenhum produto de pronta entrega nessa categoria para contar."
+            : "Nenhum produto de pronta entrega cadastrado para contar.",
+        );
       }
+      const products =
+        order === "alfabetica"
+          ? [...fetched].sort((a, b) =>
+              a.title.localeCompare(b.title, "pt-BR", { sensitivity: "base" }),
+            )
+          : fetched;
 
       const { data: count, error: countError } = await supabase
         .from("stock_inventory_counts")

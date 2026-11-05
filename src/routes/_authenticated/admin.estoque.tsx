@@ -16,6 +16,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -131,6 +139,7 @@ function InventoryTab() {
   const { data: categories } = useCategories();
   const [order, setOrder] = useState<InventoryOrder>("apresentacao");
   const [categoryId, setCategoryId] = useState<string>("todos");
+  const [startOpen, setStartOpen] = useState(false);
 
   const activeCount = counts?.find((count) => count.status === "em_andamento") ?? null;
   const history = (counts ?? []).filter((count) => count.status === "finalizado");
@@ -138,6 +147,7 @@ function InventoryTab() {
   async function handleStart() {
     try {
       await start.mutateAsync({ order, categoryId: categoryId === "todos" ? null : categoryId });
+      setStartOpen(false);
       toast.success("Contagem iniciada");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a contagem");
@@ -159,40 +169,64 @@ function InventoryTab() {
           Lista todos os produtos de pronta entrega com o estoque atual, para você conferir um a um
           e informar a quantidade real.
         </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="inventory-category">Produtos</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger id="inventory-category" className="h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                {(categories ?? []).map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="inventory-order">Ordem da lista</Label>
-            <Select value={order} onValueChange={(value) => setOrder(value as InventoryOrder)}>
-              <SelectTrigger id="inventory-order" className="h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="apresentacao">Ordem de apresentação</SelectItem>
-                <SelectItem value="alfabetica">Ordem alfabética</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <Button className="mt-4 h-11 rounded-full" disabled={start.isPending} onClick={handleStart}>
-          {start.isPending ? "Iniciando..." : "Iniciar contagem"}
+        <Button className="mt-4 h-11 rounded-full" onClick={() => setStartOpen(true)}>
+          Iniciar contagem
         </Button>
       </div>
+
+      <Dialog open={startOpen} onOpenChange={setStartOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Iniciar contagem</DialogTitle>
+            <DialogDescription>
+              Escolha quais produtos serão contados e em que ordem a lista será mostrada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="inventory-category">Produtos</Label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger id="inventory-category" className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {(categories ?? []).map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="inventory-order">Ordem da lista</Label>
+              <Select value={order} onValueChange={(value) => setOrder(value as InventoryOrder)}>
+                <SelectTrigger id="inventory-order" className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="apresentacao">Ordem de apresentação</SelectItem>
+                  <SelectItem value="alfabetica">Ordem alfabética</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="h-11 rounded-full"
+              disabled={start.isPending}
+              onClick={() => setStartOpen(false)}
+            >
+              Voltar
+            </Button>
+            <Button className="h-11 rounded-full" disabled={start.isPending} onClick={handleStart}>
+              {start.isPending ? "Iniciando..." : "Iniciar contagem"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {history.length > 0 && (
         <div className="rounded-2xl border border-border bg-card p-4">

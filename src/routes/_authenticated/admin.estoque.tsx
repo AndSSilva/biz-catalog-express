@@ -269,12 +269,12 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
   const finish = useFinishInventoryCount();
   const cancel = useCancelInventoryCount();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  // Campos em que a pessoa digitou algo (mesmo igual ao estoque atual): sair do campo confirma.
+  const touched = useRef<Set<string>>(new Set());
 
-  async function commit(item: InventoryCountItem, rawValue: string, onlyIfChanged = false) {
+  async function commit(item: InventoryCountItem, rawValue: string) {
     const trimmed = rawValue.trim();
     if (trimmed === "") return;
-    if (onlyIfChanged && Number(trimmed) === (item.counted_quantity ?? item.previous_quantity))
-      return;
     const parsed = Number(trimmed);
     if (!Number.isFinite(parsed) || parsed < 0) {
       toast.error("Informe uma quantidade válida (0 ou mais)");
@@ -286,6 +286,7 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
         inventoryCountId: countId,
         countedQuantity: Math.round(parsed),
       });
+      touched.current.delete(item.id);
     } catch {
       toast.error(`Não foi possível salvar a contagem de "${item.product_title}"`);
     }
@@ -412,7 +413,11 @@ function InventoryCountRunner({ countId, startedAt }: { countId: string; started
                   event.preventDefault();
                   void commit(item, event.currentTarget.value).then(() => focusNext(index));
                 }}
-                onBlur={(event) => void commit(item, event.currentTarget.value, true)}
+                onFocus={(event) => event.currentTarget.select()}
+                onInput={() => touched.current.add(item.id)}
+                onBlur={(event) => {
+                  if (touched.current.has(item.id)) void commit(item, event.currentTarget.value);
+                }}
               />
             </div>
           ))}
